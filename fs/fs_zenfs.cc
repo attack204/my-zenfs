@@ -7,7 +7,7 @@
 #if !defined(ROCKSDB_LITE) && defined(OS_LINUX)
 
 #include "fs_zenfs.h"
-
+#include <iostream>
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -575,11 +575,33 @@ IOStatus ZenFS::NewWritableFile(const std::string& filename,
                                 const FileOptions& file_opts,
                                 std::unique_ptr<FSWritableFile>* result,
                                 IODebugContext* /*dbg*/) {
+  std::cout << "NewWritableFile Called " << filename << " lifetime " << file_opts.lifetime << '\n';
   std::string fname = FormatPathLexically(filename);
   Debug(logger_, "New writable file: %s direct: %d\n", fname.c_str(),
         file_opts.use_direct_writes);
 
   return OpenWritableFile(fname, file_opts, result, nullptr, false);
+}
+
+IOStatus ZenFS::SetFileLifetime(std::string& fname,
+                                uint64_t lifetime) {
+  //SetFileLifetime Fail rocksdbtest/dbbench/000046.sst -1923267948
+  //SetFileLifetime Success /rocksdbtest/dbbench/000046.sst -1923267948
+  std::string f = FormatPathLexically(fname);
+  if(files_.find(f.c_str()) == files_.end()) {
+    printf("SetFileLifetime Fail %s %ld\n", f.c_str(), lifetime);
+    return IOStatus::IOError("Can't find file:" + fname);
+  } else {
+    printf("SetFileLifetime Success %s %ld\n", f.c_str(), lifetime);
+    std::shared_ptr<ZoneFile> tmp = files_[f.c_str()];
+    tmp->new_lifetime = lifetime;
+    if(tmp->GetActiveZone() != NULL) {
+      printf("ZoneFile has actived\n");
+    } else {
+      printf("ZoneFile hasn't actived\n");
+    }
+    return IOStatus::OK();
+  }
 }
 
 IOStatus ZenFS::ReuseWritableFile(const std::string& filename,

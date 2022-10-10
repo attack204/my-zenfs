@@ -49,6 +49,8 @@ class MetadataWriter {
 };
 
 class ZoneFile {
+ public:
+  uint64_t new_lifetime;
  private:
   const uint64_t NO_EXTENT = 0xffffffffffffffff;
 
@@ -94,11 +96,16 @@ class ZoneFile {
   IOStatus CloseWR();
   bool IsOpenForWR();
 
+
+  Zone *GetActiveZone() {
+    return active_zone_;
+  }
   IOStatus PersistMetadata();
 
   IOStatus Append(void* buffer, int data_size);
   IOStatus BufferedAppend(char* data, uint32_t size);
   IOStatus SparseAppend(char* data, uint32_t size);
+
   IOStatus SetWriteLifeTimeHint(Env::WriteLifeTimeHint lifetime);
   void SetIOType(IOType io_type);
   std::string GetFilename();

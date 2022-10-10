@@ -583,6 +583,7 @@ IOStatus ZonedBlockDevice::FinishCheapestIOZone() {
   return s;
 }
 
+//Allocate只需要传入一个file_lifetime即可
 IOStatus ZonedBlockDevice::GetBestOpenZoneMatch(
     Env::WriteLifeTimeHint file_lifetime, unsigned int *best_diff_out,
     Zone **zone_out, uint32_t min_capacity) {
@@ -622,6 +623,8 @@ IOStatus ZonedBlockDevice::GetBestOpenZoneMatch(
 
   return IOStatus::OK();
 }
+
+//当Allocate IO zone失效的时候调用此函数来申请一个新的zone
 
 IOStatus ZonedBlockDevice::AllocateEmptyZone(Zone **zone_out) {
   IOStatus s;

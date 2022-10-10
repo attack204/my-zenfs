@@ -751,6 +751,8 @@ void ZoneFile::SetActiveZone(Zone* zone) {
   active_zone_ = zone;
 }
 
+//ZonedWritableFile是返回给Rocksdb的对象
+//其和ZoneFile一一对应
 ZonedWritableFile::ZonedWritableFile(ZonedBlockDevice* zbd, bool _buffered,
                                      std::shared_ptr<ZoneFile> zoneFile) {
   assert(zoneFile->IsOpenForWR());
