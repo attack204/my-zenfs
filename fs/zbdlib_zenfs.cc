@@ -125,6 +125,7 @@ std::unique_ptr<ZoneList> ZbdlibBackend::ListZones() {
   return zl;
 }
 
+//Reset操作非常重要
 IOStatus ZbdlibBackend::Reset(uint64_t start, bool *offline,
                               uint64_t *max_capacity) {
   unsigned int report = 1;

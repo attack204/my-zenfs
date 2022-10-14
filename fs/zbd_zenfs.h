@@ -57,12 +57,14 @@ class Zone {
  public:
   explicit Zone(ZonedBlockDevice *zbd, ZonedBlockDeviceBackend *zbd_be,
                 std::unique_ptr<ZoneList> &zones, unsigned int idx);
-
+  uint64_t id;
   uint64_t start_;
   uint64_t capacity_; /* remaining capacity */
   uint64_t max_capacity_;
   uint64_t wp_;
   Env::WriteLifeTimeHint lifetime_;
+  uint64_t min_lifetime;
+  uint64_t max_lifetime;
   std::atomic<uint64_t> used_capacity_;
 
   IOStatus Reset();
@@ -183,6 +185,7 @@ class ZonedBlockDevice {
 
   IOStatus AllocateIOZone(Env::WriteLifeTimeHint file_lifetime, IOType io_type,
                           Zone **out_zone);
+  IOStatus AllocateIOZone(Env::WriteLifeTimeHint file_lifetime, IOType io_type, Zone **out_zone, uint64_t new_lifetime);
   IOStatus AllocateMetaZone(Zone **out_meta_zone);
 
   uint64_t GetFreeSpace();
@@ -200,6 +203,7 @@ class ZonedBlockDevice {
   uint64_t GetZoneSize();
   uint32_t GetNrZones();
   std::vector<Zone *> GetMetaZones() { return meta_zones; }
+  std::vector<Zone *> GetIOZones() { return io_zones; }
 
   void SetFinishTreshold(uint32_t threshold) { finish_threshold_ = threshold; }
 
@@ -237,6 +241,9 @@ class ZonedBlockDevice {
   IOStatus GetBestOpenZoneMatch(Env::WriteLifeTimeHint file_lifetime,
                                 unsigned int *best_diff_out, Zone **zone_out,
                                 uint32_t min_capacity = 0);
+  IOStatus GetBestOpenZoneMatch(uint64_t new_lifetime_, Env::WriteLifeTimeHint file_lifetime,
+                              unsigned int *best_diff_out, Zone **zone_out,
+                              uint32_t min_capacity = 0);
   IOStatus AllocateEmptyZone(Zone **zone_out);
 };
 

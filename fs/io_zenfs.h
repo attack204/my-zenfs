@@ -50,7 +50,7 @@ class MetadataWriter {
 
 class ZoneFile {
  public:
-  uint64_t new_lifetime;
+  uint64_t new_lifetime = 0;
  private:
   const uint64_t NO_EXTENT = 0xffffffffffffffff;
 

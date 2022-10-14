@@ -587,6 +587,10 @@ IOStatus ZenFS::SetFileLifetime(std::string& fname,
                                 uint64_t lifetime) {
   //SetFileLifetime Fail rocksdbtest/dbbench/000046.sst -1923267948
   //SetFileLifetime Success /rocksdbtest/dbbench/000046.sst -1923267948
+  const uint64_t MAX = 1e9;
+  if(lifetime > MAX) {
+    lifetime = 0; //实际上这个可以走WRITE_LIFETIME_HINT
+  }
   std::string f = FormatPathLexically(fname);
   if(files_.find(f.c_str()) == files_.end()) {
     printf("SetFileLifetime Fail %s %ld\n", f.c_str(), lifetime);

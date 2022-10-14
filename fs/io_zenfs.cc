@@ -436,13 +436,14 @@ void ZoneFile::PushExtent() {
 
 IOStatus ZoneFile::AllocateNewZone() {
   Zone* zone;
-  IOStatus s = zbd_->AllocateIOZone(lifetime_, io_type_, &zone);
-
+  IOStatus s = zbd_->AllocateIOZone(lifetime_, io_type_, &zone, new_lifetime); //my_allocate_alogortihm
+  //IOStatus s = zbd_->AllocateIOZone(lifetime_, io_type_, &zone);
   if (!s.ok()) return s;
   if (!zone) {
     return IOStatus::NoSpace("Zone allocation failure\n");
   }
   SetActiveZone(zone);
+  printf("ZoneFile::AllocateNewZone io_zone_number=%ld file=%ld zone_id=%ld lifetime=%ld min_lifetime=%ld max_lifetime=%ld zone_left=%ld\n", GetZbd()->GetIOZones().size(), GetID(), zone->id, new_lifetime, zone->min_lifetime, zone->max_lifetime, zone->GetCapacityLeft());
   extent_start_ = active_zone_->wp_;
   extent_filepos_ = file_size_;
 
@@ -576,7 +577,7 @@ IOStatus ZoneFile::Append(void* data, int data_size) {
   }
 
   while (left) {
-    if (active_zone_->capacity_ == 0) {
+    if (active_zone_->capacity_ == 0) { //这个地方很重要，既然capacity = 0，肯定就要allocate new zone
       PushExtent();
 
       s = CloseActiveZone();
@@ -739,7 +740,7 @@ IOStatus ZoneFile::SetWriteLifeTimeHint(Env::WriteLifeTimeHint lifetime) {
 
 void ZoneFile::ReleaseActiveZone() {
   assert(active_zone_ != nullptr);
-  bool ok = active_zone_->Release();
+  bool ok = active_zone_->Release(); //release只修改了一个bool变量的值
   assert(ok);
   (void)ok;
   active_zone_ = nullptr;
