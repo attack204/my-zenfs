@@ -436,8 +436,8 @@ void ZoneFile::PushExtent() {
 
 IOStatus ZoneFile::AllocateNewZone() {
   Zone* zone;
-  IOStatus s = zbd_->AllocateIOZone(lifetime_, io_type_, &zone, new_lifetime); //my_allocate_alogortihm
-  //IOStatus s = zbd_->AllocateIOZone(lifetime_, io_type_, &zone);
+  //IOStatus s = zbd_->AllocateIOZone(lifetime_, io_type_, &zone, new_lifetime); //my_allocate_alogortihm
+  IOStatus s = zbd_->AllocateIOZone(lifetime_, io_type_, &zone);
   if (!s.ok()) return s;
   if (!zone) {
     return IOStatus::NoSpace("Zone allocation failure\n");

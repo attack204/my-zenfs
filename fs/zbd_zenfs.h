@@ -232,6 +232,7 @@ class ZonedBlockDevice {
   };
   uint64_t GetTotalBytesWritten() { return bytes_written_.load(); };
 
+  void GCAndAllocateZone(Zone **out_zone);
  private:
   IOStatus GetZoneDeferredStatus();
   bool GetActiveIOZoneTokenIfAvailable();

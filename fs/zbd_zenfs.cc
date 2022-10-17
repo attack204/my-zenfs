@@ -358,8 +358,8 @@ void ZonedBlockDevice::LogGarbageInfo() {
       continue;
     }
 
-    double garbage_rate =
-        double(z->wp_ - z->start_ - z->used_capacity_) / z->max_capacity_; //这个rate越高，表示未使用的空间越少
+      double garbage_rate =
+          double(z->wp_ - z->start_ - z->used_capacity_) / z->max_capacity_; //这个rate越高，表示未使用的空间越少
     assert(garbage_rate > 0);
     int idx = int((garbage_rate + 0.1) * 10);
     zone_gc_stat[idx]++;
@@ -997,12 +997,23 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
     LogZoneStats();
   }
 
+  if(allocated_zone == nullptr) {
+    GCAndReallocate(&allocated_zone);
+  }
+
   *out_zone = allocated_zone;
+
+
 
   metrics_->ReportGeneral(ZENFS_OPEN_ZONES_COUNT, open_io_zones_);
   metrics_->ReportGeneral(ZENFS_ACTIVE_ZONES_COUNT, active_io_zones_);
 
   return IOStatus::OK();
+}
+
+
+void ZonedBlockDevice::GCAndAllocateZone(Zone **out_zone) {
+
 }
 
 std::string ZonedBlockDevice::GetFilename() { return zbd_be_->GetFilename(); }
