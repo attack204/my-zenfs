@@ -30,6 +30,8 @@
 
 #define DEFAULT_ZENV_LOG_PATH "/tmp/"
 
+#define MODE 1
+
 namespace ROCKSDB_NAMESPACE {
 
 Status Superblock::DecodeFrom(Slice* input) {

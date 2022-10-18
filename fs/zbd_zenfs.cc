@@ -125,6 +125,7 @@ IOStatus Zone::Close() {
   return IOStatus::OK();
 }
 
+//一个问题是Zone的append只传入了data，那么如何区分这个data属于哪个ZoneFile呢？
 IOStatus Zone::Append(char *data, uint32_t size) {
   ZenFSMetricsLatencyGuard guard(zbd_->GetMetrics(), ZENFS_ZONE_WRITE_LATENCY,
                                  Env::Default());
@@ -359,7 +360,7 @@ void ZonedBlockDevice::LogGarbageInfo() {
     }
 
       double garbage_rate =
-          double(z->wp_ - z->start_ - z->used_capacity_) / z->max_capacity_; //这个rate越高，表示未使用的空间越少
+          double(z->wp_ - z->start_ - z->used_capacity_) / z->max_capacity_; //这个rate越高，表示未使用的空间越多
     assert(garbage_rate > 0);
     int idx = int((garbage_rate + 0.1) * 10);
     zone_gc_stat[idx]++;
@@ -1013,7 +1014,7 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
 
 
 void ZonedBlockDevice::GCAndAllocateZone(Zone **out_zone) {
-
+  
 }
 
 std::string ZonedBlockDevice::GetFilename() { return zbd_be_->GetFilename(); }

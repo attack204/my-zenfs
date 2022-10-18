@@ -436,8 +436,11 @@ void ZoneFile::PushExtent() {
 
 IOStatus ZoneFile::AllocateNewZone() {
   Zone* zone;
-  //IOStatus s = zbd_->AllocateIOZone(lifetime_, io_type_, &zone, new_lifetime); //my_allocate_alogortihm
-  IOStatus s = zbd_->AllocateIOZone(lifetime_, io_type_, &zone);
+  if(MODE == 1) {
+    IOStatus s = zbd_->AllocateIOZone(lifetime_, io_type_, &zone, new_lifetime); //my_allocate_alogortihm
+  } else {
+    IOStatus s = zbd_->AllocateIOZone(lifetime_, io_type_, &zone);
+  }
   if (!s.ok()) return s;
   if (!zone) {
     return IOStatus::NoSpace("Zone allocation failure\n");
@@ -1040,6 +1043,7 @@ IOStatus ZonedRandomAccessFile::Read(uint64_t offset, size_t n,
   return zoneFile_->PositionedRead(offset, n, result, scratch, direct_);
 }
 
+//逻辑就是先Read出来，然后target_zone.append
 IOStatus ZoneFile::MigrateData(uint64_t offset, uint32_t length,
                                Zone* target_zone) {
   uint32_t step = 128 << 10;
