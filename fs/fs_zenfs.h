@@ -15,6 +15,7 @@ namespace fs = std::filesystem;
 #endif
 
 #include <memory>
+#include <thread>
 
 #include "io_zenfs.h"
 #include "metrics.h"
@@ -53,13 +54,14 @@ class Superblock {
   const uint32_t ENCODED_SIZE = 512;
   const uint32_t CURRENT_SUPERBLOCK_VERSION = 2;
   const uint32_t DEFAULT_FLAGS = 0;
+  const uint32_t FLAGS_ENABLE_GC = 1 << 0;
 
   Superblock() {}
 
   /* Create a superblock for a filesystem covering the entire zoned block device
    */
   Superblock(ZonedBlockDevice* zbd, std::string aux_fs_path = "",
-             uint32_t finish_threshold = 0) {
+             uint32_t finish_threshold = 0, bool enable_gc = false) {
     std::string uuid = Env::Default()->GenerateUniqueId();
     int uuid_len =
         std::min(uuid.length(),
@@ -68,6 +70,8 @@ class Superblock {
     magic_ = MAGIC;
     superblock_version_ = CURRENT_SUPERBLOCK_VERSION;
     flags_ = DEFAULT_FLAGS;
+    if (enable_gc) flags_ |= FLAGS_ENABLE_GC;
+
     finish_treshold_ = finish_threshold;
 
     block_size_ = zbd->GetBlockSize();
@@ -90,6 +94,7 @@ class Superblock {
   std::string GetAuxFsPath() { return std::string(aux_fs_path_); }
   uint32_t GetFinishTreshold() { return finish_treshold_; }
   std::string GetUUID() { return std::string(uuid_); }
+  bool IsGCEnabled() { return flags_ & FLAGS_ENABLE_GC; };
 };
 
 class ZenMetaLog {
@@ -140,6 +145,9 @@ class ZenFS : public FileSystemWrapper {
   std::unique_ptr<Superblock> superblock_;
 
   std::shared_ptr<Logger> GetLogger() { return logger_; }
+
+  std::unique_ptr<std::thread> gc_worker_ = nullptr;
+  bool run_gc_worker_ = false;
 
   struct ZenFSMetadataWriter : public MetadataWriter {
     ZenFS* zenFS;
@@ -271,7 +279,8 @@ class ZenFS : public FileSystemWrapper {
   virtual ~ZenFS();
 
   Status Mount(bool readonly);
-  Status MkFS(std::string aux_fs_path, uint32_t finish_threshold);
+  Status MkFS(std::string aux_fs_path, uint32_t finish_threshold,
+              bool enable_gc);
   std::map<std::string, Env::WriteLifeTimeHint> GetWriteLifeTimeHints();
 
   const char* Name() const override {
@@ -449,6 +458,12 @@ class ZenFS : public FileSystemWrapper {
   IOStatus MigrateFileExtents(
       const std::string& fname,
       const std::vector<ZoneExtentSnapshot*>& migrate_exts);
+
+ private:
+  const uint64_t GC_START_LEVEL =
+      20;                      /* Enable GC when < 20% free space available */
+  const uint64_t GC_SLOPE = 3; /* GC agressiveness */
+  void GCWorker();
 };
 #endif  // !defined(ROCKSDB_LITE) && defined(OS_LINUX)
 

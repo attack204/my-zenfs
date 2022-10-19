@@ -16,6 +16,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <set>
 #include <sstream>
 #include <utility>
 #include <vector>
@@ -108,6 +109,8 @@ void Superblock::GetReport(std::string* reportString) {
   reportString->append(std::to_string(nr_zones_));
   reportString->append("\nFinish Threshold [%]:\t\t");
   reportString->append(std::to_string(finish_treshold_));
+  reportString->append("\nGarbage Collection Enabled:\t");
+  reportString->append(std::to_string(!!(flags_ & FLAGS_ENABLE_GC)));
   reportString->append("\nAuxiliary FS Path:\t\t");
   reportString->append(aux_fs_path_);
   reportString->append("\nZenFS Version:\t\t\t");
@@ -258,9 +261,65 @@ ZenFS::~ZenFS() {
   zbd_->LogZoneUsage();
   LogFiles();
 
+  if (gc_worker_) {
+    run_gc_worker_ = false;
+    gc_worker_->join();
+  }
+
   meta_log_.reset(nullptr);
   ClearFiles();
   delete zbd_;
+}
+
+void ZenFS::GCWorker() {
+  while (run_gc_worker_) {
+    usleep(1000 * 1000 * 10);
+
+    uint64_t non_free = zbd_->GetUsedSpace() + zbd_->GetReclaimableSpace();
+    uint64_t free = zbd_->GetFreeSpace();
+    uint64_t free_percent = (100 * free) / (free + non_free);
+    ZenFSSnapshot snapshot;
+    ZenFSSnapshotOptions options;
+
+    if (free_percent > GC_START_LEVEL) continue;
+
+    options.zone_ = 1;
+    options.zone_file_ = 1;
+    options.log_garbage_ = 1;
+
+    GetZenFSSnapshot(snapshot, options);
+
+    uint64_t threshold = (100 - GC_SLOPE * (GC_START_LEVEL - free_percent));
+    std::set<uint64_t> migrate_zones_start;
+    for (const auto& zone : snapshot.zones_) {
+      if (zone.capacity == 0) {
+        uint64_t garbage_percent_approx =
+            100 - 100 * zone.used_capacity / zone.max_capacity;
+        if (garbage_percent_approx > threshold &&
+            garbage_percent_approx < 100) {
+          migrate_zones_start.emplace(zone.start);
+        }
+      }
+    }
+
+    std::vector<ZoneExtentSnapshot*> migrate_exts;
+    for (auto& ext : snapshot.extents_) {
+      if (migrate_zones_start.find(ext.zone_start) !=
+          migrate_zones_start.end()) {
+        migrate_exts.push_back(&ext);
+      }
+    }
+
+    if (migrate_exts.size() > 0) {
+      IOStatus s;
+      Info(logger_, "Garbage collecting %d extents \n",
+           (int)migrate_exts.size());
+      s = MigrateExtents(migrate_exts);
+      if (!s.ok()) {
+        Error(logger_, "Garbage collection failed");
+      }
+    }
+  }
 }
 
 IOStatus ZenFS::Repair() {
@@ -1447,6 +1506,12 @@ Status ZenFS::Mount(bool readonly) {
     IOStatus status = zbd_->ResetUnusedIOZones();
     if (!status.ok()) return status;
     Info(logger_, "  Done");
+
+    if (superblock_->IsGCEnabled()) {
+      Info(logger_, "Starting garbage collection worker");
+      run_gc_worker_ = true;
+      gc_worker_.reset(new std::thread(&ZenFS::GCWorker, this));
+    }
   }
 
   LogFiles();
@@ -1454,7 +1519,8 @@ Status ZenFS::Mount(bool readonly) {
   return Status::OK();
 }
 
-Status ZenFS::MkFS(std::string aux_fs_p, uint32_t finish_threshold) {
+Status ZenFS::MkFS(std::string aux_fs_p, uint32_t finish_threshold,
+                   bool enable_gc) {
   std::vector<Zone*> metazones = zbd_->GetMetaZones();
   std::unique_ptr<ZenMetaLog> log;
   Zone* meta_zone = nullptr;
@@ -1498,7 +1564,7 @@ Status ZenFS::MkFS(std::string aux_fs_p, uint32_t finish_threshold) {
 
   log.reset(new ZenMetaLog(zbd_, meta_zone));
 
-  Superblock super(zbd_, aux_fs_path, finish_threshold);
+  Superblock super(zbd_, aux_fs_path, finish_threshold, enable_gc);
   std::string super_string;
   super.EncodeTo(&super_string);
 
