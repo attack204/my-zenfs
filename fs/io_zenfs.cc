@@ -436,10 +436,11 @@ void ZoneFile::PushExtent() {
 
 IOStatus ZoneFile::AllocateNewZone() {
   Zone* zone;
-  if(MODE == 1) {
-    IOStatus s = zbd_->AllocateIOZone(lifetime_, io_type_, &zone, new_lifetime); //my_allocate_alogortihm
+  IOStatus s;
+  if(MYMODE == true) {
+    s = zbd_->AllocateIOZone(lifetime_, io_type_, &zone, new_lifetime); //my_allocate_alogortihm
   } else {
-    IOStatus s = zbd_->AllocateIOZone(lifetime_, io_type_, &zone);
+    s = zbd_->AllocateIOZone(lifetime_, io_type_, &zone);
   }
   if (!s.ok()) return s;
   if (!zone) {
@@ -703,7 +704,7 @@ IOStatus ZoneFile::Recover() {
 }
 
 void ZoneFile::ReplaceExtentList(std::vector<ZoneExtent*> new_list) {
-  assert(!IsOpenForWR() && new_list.size() > 0);
+  assert(!IsOpenForWR() && new_list.size() >= 0);
   assert(new_list.size() == extents_.size());
 
   WriteLock lck(this);

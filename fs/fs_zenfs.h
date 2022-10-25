@@ -28,6 +28,7 @@ namespace fs = std::filesystem;
 
 namespace ROCKSDB_NAMESPACE {
 
+
 #if !defined(ROCKSDB_LITE) && defined(OS_LINUX)
 
 class ZoneSnapshot;
@@ -138,6 +139,7 @@ class ZenFS : public FileSystemWrapper {
   std::mutex files_mtx_;
   std::shared_ptr<Logger> logger_;
   std::atomic<uint64_t> next_file_id_;
+  std::map<uint64_t, std::vector<uint64_t> >zone_file_list;
 
   Zone* cur_meta_zone_ = nullptr;
   std::unique_ptr<ZenMetaLog> meta_log_;
@@ -147,7 +149,7 @@ class ZenFS : public FileSystemWrapper {
   std::shared_ptr<Logger> GetLogger() { return logger_; }
 
   std::unique_ptr<std::thread> gc_worker_ = nullptr;
-  bool run_gc_worker_ = false;
+  bool run_gc_worker_ = true;
 
   struct ZenFSMetadataWriter : public MetadataWriter {
     ZenFS* zenFS;
@@ -464,6 +466,7 @@ class ZenFS : public FileSystemWrapper {
       20;                      /* Enable GC when < 20% free space available */
   const uint64_t GC_SLOPE = 3; /* GC agressiveness */
   void GCWorker();
+  void MyGCWorker();
 };
 #endif  // !defined(ROCKSDB_LITE) && defined(OS_LINUX)
 

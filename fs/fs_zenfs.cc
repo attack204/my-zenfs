@@ -25,15 +25,18 @@
 #include "metrics_prometheus.h"
 #endif
 #include "rocksdb/utilities/object_registry.h"
+#include "db/db_impl/db_impl.h"
 #include "snapshot.h"
 #include "util/coding.h"
 #include "util/crc32c.h"
 
 #define DEFAULT_ZENV_LOG_PATH "/tmp/"
 
-#define MODE 1
 
 namespace ROCKSDB_NAMESPACE {
+
+extern bool DoPreCompaction(std::vector<uint64_t> file_list);
+
 
 Status Superblock::DecodeFrom(Slice* input) {
   if (input->size() != ENCODED_SIZE) {
@@ -272,10 +275,12 @@ ZenFS::~ZenFS() {
 }
 
 void ZenFS::GCWorker() {
+  uint32_t gc_times = 0;
+    
   while (run_gc_worker_) {
-    usleep(1000 * 1000 * 10);
-
-    uint64_t non_free = zbd_->GetUsedSpace() + zbd_->GetReclaimableSpace();
+    //usleep(1000 * 1000 * 10);
+    usleep(1000);
+    uint64_t non_free = zbd_->GetUsedSpace() + zbd_->GetReclaimableSpace(); //使用过的Space和可以回收的Space
     uint64_t free = zbd_->GetFreeSpace();
     uint64_t free_percent = (100 * free) / (free + non_free);
     ZenFSSnapshot snapshot;
@@ -289,14 +294,21 @@ void ZenFS::GCWorker() {
 
     GetZenFSSnapshot(snapshot, options);
 
+    //GC_SLOPE = 3
+    //GC_START_LEVEL = 20
+    //100 - 3 * (20 - free_percent)
+    // = 100 - 60 + free_percent
+    // = 40 + free_percent
     uint64_t threshold = (100 - GC_SLOPE * (GC_START_LEVEL - free_percent));
     std::set<uint64_t> migrate_zones_start;
     for (const auto& zone : snapshot.zones_) {
-      if (zone.capacity == 0) {
+      if (zone.capacity == 0)  {
         uint64_t garbage_percent_approx =
             100 - 100 * zone.used_capacity / zone.max_capacity;
+        //如果说空间利用率较小，大于了threshold
         if (garbage_percent_approx > threshold &&
             garbage_percent_approx < 100) {
+            printf("GC Begin %d\n", ++gc_times);
           migrate_zones_start.emplace(zone.start);
         }
       }
@@ -311,6 +323,74 @@ void ZenFS::GCWorker() {
     }
 
     if (migrate_exts.size() > 0) {
+    
+      IOStatus s;
+      Info(logger_, "Garbage collecting %d extents \n",
+           (int)migrate_exts.size());
+      s = MigrateExtents(migrate_exts);
+      if (!s.ok()) {
+        Error(logger_, "Garbage collection failed");
+      }
+    }
+  }
+}
+
+void ZenFS::MyGCWorker() {
+  uint32_t gc_times = 0;
+    
+  while (run_gc_worker_) {
+    //usleep(1000 * 1000 * 10);
+
+    usleep(1000);
+    uint64_t non_free = zbd_->GetUsedSpace() + zbd_->GetReclaimableSpace();
+    uint64_t free = zbd_->GetFreeSpace();
+    uint64_t free_percent = (100 * free) / (free + non_free);
+    ZenFSSnapshot snapshot;
+    ZenFSSnapshotOptions options;
+    printf("GC Work Start free_percent=%ld GC_START_LEVEL=%ld\n", free_percent, GC_START_LEVEL);
+    if (free_percent > GC_START_LEVEL) continue;
+
+    options.zone_ = 1;
+    options.zone_file_ = 1;
+    options.log_garbage_ = 1;
+
+    GetZenFSSnapshot(snapshot, options);
+
+    uint64_t threshold = (100 - GC_SLOPE * (GC_START_LEVEL - free_percent));
+    std::set<uint64_t> migrate_zones_start;
+    for (const auto& zone : snapshot.zones_) {
+      printf("zone.capacity=%ld\n", zone.capacity);
+      if (zone.capacity == 0)  {
+        
+        uint64_t garbage_percent_approx =
+            100 - 100 * zone.used_capacity / zone.max_capacity;
+        printf("garbage_percent_approx=%ld\n", garbage_percent_approx);
+        if (garbage_percent_approx > threshold &&
+            garbage_percent_approx < 100) {
+          std::vector<uint64_t> &file_list = zone_file_list[zone.start];
+          if(DoPreCompaction(file_list)) {
+            printf("DoPreCompaction is True");
+            migrate_zones_start.emplace(zone.start);
+          } else {
+            printf("DoPreCompaction is False");
+          }
+        }
+      }
+    }
+
+    
+  
+
+    std::vector<ZoneExtentSnapshot*> migrate_exts;
+    for (auto& ext : snapshot.extents_) {
+      if (migrate_zones_start.find(ext.zone_start) !=
+          migrate_zones_start.end()) {
+        migrate_exts.push_back(&ext);
+      }
+    }
+
+    if (migrate_exts.size() > 0) {
+      printf("GC Begin %d\n", ++gc_times);
       IOStatus s;
       Info(logger_, "Garbage collecting %d extents \n",
            (int)migrate_exts.size());
@@ -1507,11 +1587,15 @@ Status ZenFS::Mount(bool readonly) {
     if (!status.ok()) return status;
     Info(logger_, "  Done");
 
-    if (superblock_->IsGCEnabled()) {
+    //if (superblock_->IsGCEnabled()) {
       Info(logger_, "Starting garbage collection worker");
       run_gc_worker_ = true;
-      gc_worker_.reset(new std::thread(&ZenFS::GCWorker, this));
-    }
+      if(MYMODE == true) {
+        gc_worker_.reset(new std::thread(&ZenFS::MyGCWorker, this));
+      } else {
+        gc_worker_.reset(new std::thread(&ZenFS::GCWorker, this));
+      }
+    //}
   }
 
   LogFiles();
@@ -1594,7 +1678,7 @@ std::map<std::string, Env::WriteLifeTimeHint> ZenFS::GetWriteLifeTimeHints() {
   return hint_map;
 }
 
-#if !defined(NDEBUG) || defined(WITH_TERARKDB)
+//#if !defined(NDEBUG) || defined(WITH_TERARKDB)
 static std::string GetLogFilename(std::string bdev) {
   std::ostringstream ss;
   time_t t = time(0);
@@ -1606,12 +1690,14 @@ static std::string GetLogFilename(std::string bdev) {
 
   return ss.str();
 }
-#endif
+//#endif
 
 Status NewZenFS(FileSystem** fs, const std::string& bdevname,
                 std::shared_ptr<ZenFSMetrics> metrics) {
   return NewZenFS(fs, ZbdBackendType::kBlockDev, bdevname, metrics);
 }
+
+
 
 Status NewZenFS(FileSystem** fs, const ZbdBackendType backend_type,
                 const std::string& backend_name,
@@ -1624,17 +1710,17 @@ Status NewZenFS(FileSystem** fs, const ZbdBackendType backend_type,
   //
   // TODO(guokuankuan@bytedance.com) We need to figure out how to reuse
   // RocksDB's logger in the future.
-#if !defined(NDEBUG) || defined(WITH_TERARKDB)
+//#if !defined(NDEBUG) || defined(WITH_TERARKDB)
   s = Env::Default()->NewLogger(GetLogFilename(backend_name), &logger);
   if (!s.ok()) {
     fprintf(stderr, "ZenFS: Could not create logger");
   } else {
     logger->SetInfoLogLevel(DEBUG_LEVEL);
-#ifdef WITH_TERARKDB
+//#ifdef WITH_TERARKDB
     logger->SetInfoLogLevel(INFO_LEVEL);
-#endif
+//#endif
   }
-#endif
+//#endif
 
   ZonedBlockDevice* zbd =
       new ZonedBlockDevice(backend_name, backend_type, logger, metrics);
@@ -1742,10 +1828,17 @@ void ZenFS::GetZenFSSnapshot(ZenFSSnapshot& snapshot,
   if (options.zone_) {
     zbd_->GetZoneSnapshot(snapshot.zones_);
   }
+  zone_file_list.clear();
   if (options.zone_file_) {
     std::lock_guard<std::mutex> file_lock(files_mtx_);
     for (const auto& file_it : files_) {
       ZoneFile& file = *(file_it.second);
+
+      //为什么这里的GetActiveZone()有可能=0呢？
+      if(file.GetActiveZone() != nullptr) {
+        zone_file_list[file.GetActiveZone()->start_].emplace_back(file.GetID());
+      }
+   
 
       /* Skip files open for writing, as extents are being updated */
       if (!file.TryAcquireWRLock()) continue;
