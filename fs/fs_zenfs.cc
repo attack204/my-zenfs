@@ -285,7 +285,7 @@ void ZenFS::GCWorker() {
     uint64_t free_percent = (100 * free) / (free + non_free);
     ZenFSSnapshot snapshot;
     ZenFSSnapshotOptions options;
-
+    printf("GC Work Start free_percent=%ld GC_START_LEVEL=%ld\n", free_percent, GC_START_LEVEL);
     if (free_percent > GC_START_LEVEL) continue;
 
     options.zone_ = 1;
@@ -305,6 +305,8 @@ void ZenFS::GCWorker() {
       if (zone.capacity == 0)  {
         uint64_t garbage_percent_approx =
             100 - 100 * zone.used_capacity / zone.max_capacity;
+        printf("garbage_percent_approx=%ld\n", garbage_percent_approx);
+        
         //如果说空间利用率较小，大于了threshold
         if (garbage_percent_approx > threshold &&
             garbage_percent_approx < 100) {
@@ -373,6 +375,7 @@ void ZenFS::MyGCWorker() {
             migrate_zones_start.emplace(zone.start);
           } else {
             printf("DoPreCompaction is False");
+            migrate_zones_start.emplace(zone.start);
           }
         }
       }
@@ -1833,7 +1836,7 @@ void ZenFS::GetZenFSSnapshot(ZenFSSnapshot& snapshot,
     std::lock_guard<std::mutex> file_lock(files_mtx_);
     for (const auto& file_it : files_) {
       ZoneFile& file = *(file_it.second);
-
+      //printf("ZoneFileOpenForWR() id=%ld IsOpenForWR()=%ld\n", file.GetID(), file.IsOpenForWR());
       //为什么这里的GetActiveZone()有可能=0呢？
       if(file.GetActiveZone() != nullptr) {
         zone_file_list[file.GetActiveZone()->start_].emplace_back(file.GetID());

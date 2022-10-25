@@ -704,6 +704,7 @@ IOStatus ZoneFile::Recover() {
 }
 
 void ZoneFile::ReplaceExtentList(std::vector<ZoneExtent*> new_list) {
+//  if(IsOpenForWR()) return ;
   assert(!IsOpenForWR() && new_list.size() >= 0);
   assert(new_list.size() == extents_.size());
 
