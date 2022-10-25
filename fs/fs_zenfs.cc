@@ -1507,11 +1507,11 @@ Status ZenFS::Mount(bool readonly) {
     if (!status.ok()) return status;
     Info(logger_, "  Done");
 
-    if (superblock_->IsGCEnabled()) {
+   // if (superblock_->IsGCEnabled()) {
       Info(logger_, "Starting garbage collection worker");
       run_gc_worker_ = true;
       gc_worker_.reset(new std::thread(&ZenFS::GCWorker, this));
-    }
+   // }
   }
 
   LogFiles();

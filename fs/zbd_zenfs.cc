@@ -998,9 +998,6 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
     LogZoneStats();
   }
 
-  if(allocated_zone == nullptr) {
-    GCAndReallocate(&allocated_zone);
-  }
 
   *out_zone = allocated_zone;
 
@@ -1012,10 +1009,6 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
   return IOStatus::OK();
 }
 
-
-void ZonedBlockDevice::GCAndAllocateZone(Zone **out_zone) {
-  
-}
 
 std::string ZonedBlockDevice::GetFilename() { return zbd_be_->GetFilename(); }
 
