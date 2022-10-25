@@ -364,10 +364,10 @@ void ZenFS::MyGCWorker() {
         
         uint64_t garbage_percent_approx =
             100 - 100 * zone.used_capacity / zone.max_capacity;
-        printf("garbage_percent_approx=%ld\n", garbage_percent_approx);
         if (garbage_percent_approx > threshold &&
             garbage_percent_approx < 100) {
           std::vector<uint64_t> &file_list = zone_file_list[zone.start];
+          printf("garbage_percent_approx=%ld file_list_size=%ld\n", garbage_percent_approx, file_list.size());
           if(DoPreCompaction(file_list)) {
             printf("DoPreCompaction is True");
             migrate_zones_start.emplace(zone.start);
