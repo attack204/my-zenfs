@@ -663,8 +663,9 @@ IOStatus ZenFS::DeleteFileNoLock(std::string fname, const IOOptions& options,
     } else {
       if (zoneFile->GetNrLinks() > 0) return s;
       /* Mark up the file as deleted so it won't be migrated by GC */
-      printf("delete_file_no_lock set_id=%ld\n", zoneFile->GetID());
+
       zoneFile->SetDeleted();
+      printf("delete_file_no_lock set_id=%ld is_deleted=%d\n", zoneFile->GetID(), zoneFile->IsDeleted());
       zoneFile.reset();
     }
   } else {
@@ -721,7 +722,7 @@ IOStatus ZenFS::NewWritableFile(const std::string& filename,
                                 const FileOptions& file_opts,
                                 std::unique_ptr<FSWritableFile>* result,
                                 IODebugContext* /*dbg*/) {
-  std::cout << "NewWritableFile Called " << filename << " lifetime " << file_opts.lifetime << '\n';
+  printf("NewWritableFile Called %s\n", filename.c_str());
   std::string fname = FormatPathLexically(filename);
   Debug(logger_, "New writable file: %s direct: %d\n", fname.c_str(),
         file_opts.use_direct_writes);
@@ -996,7 +997,7 @@ IOStatus ZenFS::DeleteFile(const std::string& fname, const IOOptions& options,
   std::string f = FormatPathLexically(fname);
   printf("delete file called %s %s\n", fname.c_str(), f.c_str());
   
-  if(files_.find(f) != files_.end() && files_[f] != nullptr) {
+  if(files_.find(f) != files_.end() && files_[f].get() != nullptr) {
     printf("file_delete_id=%ld\n", files_[f]->GetID());
   }
   
@@ -1865,7 +1866,7 @@ void ZenFS::GetZenFSSnapshot(ZenFSSnapshot& snapshot,
       if (!file.TryAcquireWRLock()) continue;
 
    
-      zone_file_list[file.zone_begin].emplace_back(file.GetID());
+      zone_file_list[file.zone_begin].emplace_back(file.GetID() - 7);
       printf("file_information migrate_file_id=%ld is_deleted=%d is_openwr=%d  zone_begin=%ld zone_id=%ld\n", 
          file.GetID(), file.IsDeleted(), file.IsOpenForWR(), file.zone_begin, file.zone_id);
       // file -> extents mapping
