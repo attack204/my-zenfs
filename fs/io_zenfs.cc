@@ -710,7 +710,7 @@ IOStatus ZoneFile::Recover() {
 void ZoneFile::ReplaceExtentList(std::vector<ZoneExtent*> new_list) {
 //  if(IsOpenForWR()) return ;
   if(IsOpenForWR()) {
-    printf("ReplaceExtentList Error ZoneFile id=%ld IsDeleted=%d IsOpenForWR=%d\n", GetID(), IsDeleted(), IsOpenForWR());
+    printf("ERROR: ReplaceExtentList ZoneFile id=%ld IsDeleted=%d IsOpenForWR=%d\n", GetID(), IsDeleted(), IsOpenForWR());
   }
   //while(IsOpenForWR());
   //assert(!IsOpenForWR() && new_list.size() >= 0);

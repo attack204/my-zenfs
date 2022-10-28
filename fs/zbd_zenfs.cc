@@ -441,6 +441,7 @@ IOStatus ZonedBlockDevice::AllocateMetaZone(Zone **out_meta_zone) {
 IOStatus ZonedBlockDevice::ResetUnusedIOZones() {
   for (const auto z : io_zones) {
     if (z->Acquire()) {
+      printf("Reset zone_id=%ld zone_start=%ld is_empty()=%d used_capacity=%ld\n", z->id, z->start_, z->IsEmpty(), z->used_capacity_.load());
       if (!z->IsEmpty() && !z->IsUsed()) {
         bool full = z->IsFull();
         IOStatus reset_status = z->Reset();

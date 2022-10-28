@@ -279,7 +279,7 @@ void ZenFS::GCWorker() {
     
   while (run_gc_worker_) {
     //usleep(1000 * 1000 * 10);
-    usleep(1000);
+    usleep(1000 * 1000);
     uint64_t non_free = zbd_->GetUsedSpace() + zbd_->GetReclaimableSpace(); //使用过的Space和可以回收的Space
     uint64_t free = zbd_->GetFreeSpace();
     uint64_t free_percent = (100 * free) / (free + non_free);
@@ -370,9 +370,13 @@ void ZenFS::MyGCWorker() {
             garbage_percent_approx < 100) {
           std::vector<uint64_t> &file_list = zone_file_list[zone.start];
 
-          printf("garbage_percent_approx=%ld threshold=%ld zone.start=%ld capacity=%ld used_capacity=%ld max_capacity=%ld file_list_size=%ld\n", garbage_percent_approx, threshold, zone.start, zone.capacity, zone.used_capacity, zone.max_capacity, file_list.size());
+          printf("garbage_percent_approx=%ld threshold=%ld zone.start=%ld zone.id=%ld capacity=%ld used_capacity=%ld max_capacity=%ld file_list_size=%ld\n", garbage_percent_approx, threshold, zone.start, zone.id, zone.capacity, zone.used_capacity, zone.max_capacity, file_list.size());
           if(DoPreCompaction(file_list)) {
             printf("DoPreCompaction is True\n");
+            Status s = zbd_->ResetUnusedIOZones();
+            if(!s.ok()) {
+              printf("ERROR: ResetUnusedIOZones()");
+            }
             migrate_zones_start.emplace(zone.start);
           } else {
             printf("DoPreCompaction is False\n");
@@ -739,15 +743,16 @@ IOStatus ZenFS::SetFileLifetime(std::string& fname,
     lifetime = 0; //实际上这个可以走WRITE_LIFETIME_HINT
   }
   std::string f = FormatPathLexically(fname);
-  if(files_.find(f.c_str()) == files_.end()) {
+  if(files_.find(f) == files_.end()) {
     printf("SetFileLifetime Fail %s %ld\n", f.c_str(), lifetime);
     return IOStatus::IOError("Can't find file:" + fname);
   } else {
-    printf("SetFileLifetime Success %s %ld\n", f.c_str(), lifetime);
+    printf("SetFileLifetime Success name=%s id=%ld lifetime=%ld\n", f.c_str(), files_[f]->GetID(), lifetime);
     std::shared_ptr<ZoneFile> tmp = files_[f.c_str()];
     tmp->new_lifetime = lifetime;
     if(tmp->GetActiveZone() != NULL) {
       printf("ZoneFile has actived\n");
+
     } else {
       printf("ZoneFile hasn't actived\n");
     }
