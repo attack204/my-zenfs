@@ -343,7 +343,7 @@ void ZenFS::MyGCWorker() {
   while (run_gc_worker_) {
     //usleep(1000 * 1000 * 10);
 
-    usleep(1000);
+    usleep(1000 * 1000);
     uint64_t non_free = zbd_->GetUsedSpace() + zbd_->GetReclaimableSpace();
     uint64_t free = zbd_->GetFreeSpace();
     uint64_t free_percent = (100 * free) / (free + non_free);
