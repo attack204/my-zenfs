@@ -96,6 +96,7 @@ IOStatus Zone::Reset() { //注意Reset接口，GC的时候肯定要调用Reset
   else
     max_capacity_ = capacity_ = max_capacity;
 
+  files_id.clear();
   wp_ = start_;
   lifetime_ = Env::WLTH_NOT_SET;
 
@@ -1058,6 +1059,8 @@ void ZonedBlockDevice::SetZoneDeferredStatus(IOStatus status) {
 void ZonedBlockDevice::GetZoneSnapshot(std::vector<ZoneSnapshot> &snapshot) {
   for (auto *zone : io_zones) {
     snapshot.emplace_back(*zone);
+    printf("zone_information zone_id=%ld zone_capacity=%ld zone_max_capacity=%ld zone_used_capacity=%ld\n",
+          zone->id, zone->capacity_, zone->max_capacity_, zone->used_capacity_.load());
   }
 }
 

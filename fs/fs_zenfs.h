@@ -463,7 +463,7 @@ class ZenFS : public FileSystemWrapper {
 
  private:
   const uint64_t GC_START_LEVEL =
-      50;                      /* Enable GC when < 20% free space available */
+      70;                      /* Enable GC when < 20% free space available */
   const uint64_t GC_SLOPE = 3; /* GC agressiveness */
   void GCWorker();
   void MyGCWorker();

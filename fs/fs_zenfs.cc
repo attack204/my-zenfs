@@ -305,7 +305,7 @@ void ZenFS::GCWorker() {
       if (zone.capacity == 0)  {
         uint64_t garbage_percent_approx =
             100 - 100 * zone.used_capacity / zone.max_capacity;
-        printf("garbage_percent_approx=%ld\n", garbage_percent_approx);
+        printf("garbage_percent_approx=%ld threshold=%ld\n", garbage_percent_approx, threshold);
         
         //如果说空间利用率较小，大于了threshold
         if (garbage_percent_approx > threshold &&
@@ -349,7 +349,7 @@ void ZenFS::MyGCWorker() {
     uint64_t free_percent = (100 * free) / (free + non_free);
     ZenFSSnapshot snapshot;
     ZenFSSnapshotOptions options;
-    printf("GC Work Start free_percent=%ld GC_START_LEVEL=%ld\n", free_percent, GC_START_LEVEL);
+    printf("GC Work Start free_percent=%ld  free=%ld non_free=%ld GC_START_LEVEL=%ld\n", free_percent, free, non_free, GC_START_LEVEL);
     if (free_percent > GC_START_LEVEL) continue;
 
     options.zone_ = 1;
@@ -369,19 +369,20 @@ void ZenFS::MyGCWorker() {
         if (garbage_percent_approx > threshold &&
             garbage_percent_approx < 100) {
           std::vector<uint64_t> &file_list = zone_file_list[zone.start];
-          printf("garbage_percent_approx=%ld file_list_size=%ld\n", garbage_percent_approx, file_list.size());
+
+          printf("garbage_percent_approx=%ld threshold=%ld zone.start=%ld capacity=%ld used_capacity=%ld max_capacity=%ld file_list_size=%ld\n", garbage_percent_approx, threshold, zone.start, zone.capacity, zone.used_capacity, zone.max_capacity, file_list.size());
           if(DoPreCompaction(file_list)) {
-            printf("DoPreCompaction is True");
+            printf("DoPreCompaction is True\n");
             migrate_zones_start.emplace(zone.start);
           } else {
-            printf("DoPreCompaction is False");
+            printf("DoPreCompaction is False\n");
             migrate_zones_start.emplace(zone.start);
           }
+          zone_file_list[zone.start].clear();
         }
       }
     }
 
-    
   
 
     std::vector<ZoneExtentSnapshot*> migrate_exts;
@@ -662,6 +663,7 @@ IOStatus ZenFS::DeleteFileNoLock(std::string fname, const IOOptions& options,
     } else {
       if (zoneFile->GetNrLinks() > 0) return s;
       /* Mark up the file as deleted so it won't be migrated by GC */
+      printf("delete_file_no_lock set_id=%ld\n", zoneFile->GetID());
       zoneFile->SetDeleted();
       zoneFile.reset();
     }
@@ -991,6 +993,13 @@ IOStatus ZenFS::DeleteFile(const std::string& fname, const IOOptions& options,
   IOStatus s;
 
   Debug(logger_, "DeleteFile: %s \n", fname.c_str());
+  std::string f = FormatPathLexically(fname);
+  printf("delete file called %s %s\n", fname.c_str(), f.c_str());
+  
+  if(files_.find(f) != files_.end() && files_[f] != nullptr) {
+    printf("file_delete_id=%ld\n", files_[f]->GetID());
+  }
+  
 
   files_mtx_.lock();
   s = DeleteFileNoLock(fname, options, dbg);
@@ -1831,23 +1840,37 @@ void ZenFS::GetZenFSSnapshot(ZenFSSnapshot& snapshot,
   if (options.zone_) {
     zbd_->GetZoneSnapshot(snapshot.zones_);
   }
+ 
   zone_file_list.clear();
   if (options.zone_file_) {
     std::lock_guard<std::mutex> file_lock(files_mtx_);
+    
     for (const auto& file_it : files_) {
       ZoneFile& file = *(file_it.second);
-      //printf("ZoneFileOpenForWR() id=%ld IsOpenForWR()=%ld\n", file.GetID(), file.IsOpenForWR());
-      //为什么这里的GetActiveZone()有可能=0呢？
-      if(file.GetActiveZone() != nullptr) {
-        zone_file_list[file.GetActiveZone()->start_].emplace_back(file.GetID());
-      }
+
+      // if(file.GetActiveZone() != nullptr) {
+       
+      //   printf("file.GetActiveZone() is not nullptr address=%ld file_id=%ld zone_id=%ld zone_start=%ld\n", 
+      //         &file, file.GetID(), file.GetActiveZone()->id, file.zone_begin);
+      // } else {
+      //   if(file.GetZbd() == nullptr) {
+      //     printf("file.GetZbd() is also null");
+      //   }
+      //   printf("file.GetActiveZone() is nullptr address=%ld file_id=%ld is_deleted=%d is_openwr=%d new_lifetime=%ld file_size=%ld\n", 
+      //   &file, file.GetID(), file.IsDeleted(), file.IsOpenForWR(), file.new_lifetime, file.zone_begin);
+      // }
    
 
       /* Skip files open for writing, as extents are being updated */
       if (!file.TryAcquireWRLock()) continue;
 
+   
+      zone_file_list[file.zone_begin].emplace_back(file.GetID());
+      printf("file_information migrate_file_id=%ld is_deleted=%d is_openwr=%d  zone_begin=%ld zone_id=%ld\n", 
+         file.GetID(), file.IsDeleted(), file.IsOpenForWR(), file.zone_begin, file.zone_id);
       // file -> extents mapping
       snapshot.zone_files_.emplace_back(file);
+
       // extent -> file mapping
       for (auto* ext : file.GetExtents()) {
         snapshot.extents_.emplace_back(*ext, file.GetFilename());
@@ -1855,6 +1878,7 @@ void ZenFS::GetZenFSSnapshot(ZenFSSnapshot& snapshot,
 
       file.ReleaseWRLock();
     }
+    printf("All files number=%ld zone_files_=%ld has_actived_zone_size=%ld\n", files_.size(), snapshot.zone_files_.size(), zone_file_list.size());
   }
 
   if (options.trigger_report_) {

@@ -70,6 +70,7 @@ class Zone {
   uint64_t min_lifetime;
   uint64_t max_lifetime;
   std::atomic<uint64_t> used_capacity_;
+  std::vector<uint64_t> files_id;
 
   IOStatus Reset();
   IOStatus Finish();

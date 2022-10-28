@@ -447,7 +447,11 @@ IOStatus ZoneFile::AllocateNewZone() {
     return IOStatus::NoSpace("Zone allocation failure\n");
   }
   SetActiveZone(zone);
-  printf("ZoneFile::AllocateNewZone io_zone_number=%ld file=%ld zone_id=%ld lifetime=%ld min_lifetime=%ld max_lifetime=%ld zone_left=%ld\n", GetZbd()->GetIOZones().size(), GetID(), zone->id, new_lifetime, zone->min_lifetime, zone->max_lifetime, zone->GetCapacityLeft());
+  zone_begin = zone->start_;
+  zone_id = zone->id;
+  printf("ZoneFile::AllocateNewZone address=%ld io_zone_number=%ld file_id=%ld zone_id=%ld lifetime=%ld min_lifetime=%ld max_lifetime=%ld zone_left=%ld\n", 
+    (long) this, GetZbd()->GetIOZones().size(), GetID(), GetActiveZone()->id, new_lifetime, zone->min_lifetime, zone->max_lifetime, zone->GetCapacityLeft());
+  
   extent_start_ = active_zone_->wp_;
   extent_filepos_ = file_size_;
 
@@ -705,7 +709,11 @@ IOStatus ZoneFile::Recover() {
 
 void ZoneFile::ReplaceExtentList(std::vector<ZoneExtent*> new_list) {
 //  if(IsOpenForWR()) return ;
-  assert(!IsOpenForWR() && new_list.size() >= 0);
+  if(IsOpenForWR()) {
+    printf("ReplaceExtentList Error ZoneFile id=%ld IsDeleted=%d IsOpenForWR=%d\n", GetID(), IsDeleted(), IsOpenForWR());
+  }
+  //while(IsOpenForWR());
+  //assert(!IsOpenForWR() && new_list.size() >= 0);
   assert(new_list.size() == extents_.size());
 
   WriteLock lck(this);
@@ -755,6 +763,7 @@ void ZoneFile::SetActiveZone(Zone* zone) {
   assert(active_zone_ == nullptr);
   assert(zone->IsBusy());
   active_zone_ = zone;
+  zone->files_id.emplace_back(GetID());
 }
 
 //ZonedWritableFile是返回给Rocksdb的对象
