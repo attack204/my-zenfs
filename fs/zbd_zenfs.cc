@@ -854,124 +854,129 @@ IOStatus ZonedBlockDevice::TakeMigrateZone(Zone **out_zone,
 }
 
 
-//这里的传参数只传了file_lifetime，也就是说整个allocate算法的输入只有file_lifetime
-IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
-                                          IOType io_type, Zone **out_zone) {
-  Zone *allocated_zone = nullptr; //记录申请到的zone
-  unsigned int best_diff = LIFETIME_DIFF_NOT_GOOD;
-  int new_zone = 0;
-  IOStatus s;
+// //这里的传参数只传了file_lifetime，也就是说整个allocate算法的输入只有file_lifetime
+// IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
+//                                           IOType io_type, Zone **out_zone) {
+//   Zone *allocated_zone = nullptr; //记录申请到的zone
+//   unsigned int best_diff = LIFETIME_DIFF_NOT_GOOD;
+//   int new_zone = 0;
+//   IOStatus s;
 
-  auto tag = ZENFS_WAL_IO_ALLOC_LATENCY;
-  if (io_type != IOType::kWAL) {
-    // L0 flushes have lifetime MEDIUM
-    if (file_lifetime == Env::WLTH_MEDIUM) {
-      tag = ZENFS_L0_IO_ALLOC_LATENCY;
-    } else {
-      tag = ZENFS_NON_WAL_IO_ALLOC_LATENCY;
-    }
-  }
+//   auto tag = ZENFS_WAL_IO_ALLOC_LATENCY;
+//   if (io_type != IOType::kWAL) {
+//     // L0 flushes have lifetime MEDIUM
+//     if (file_lifetime == Env::WLTH_MEDIUM) {
+//       tag = ZENFS_L0_IO_ALLOC_LATENCY;
+//     } else {
+//       tag = ZENFS_NON_WAL_IO_ALLOC_LATENCY;
+//     }
+//   }
 
-  ZenFSMetricsLatencyGuard guard(metrics_, tag, Env::Default());
-  metrics_->ReportQPS(ZENFS_IO_ALLOC_QPS, 1);
+//   ZenFSMetricsLatencyGuard guard(metrics_, tag, Env::Default());
+//   metrics_->ReportQPS(ZENFS_IO_ALLOC_QPS, 1);
 
-  // Check if a deferred IO error was set
-  s = GetZoneDeferredStatus();
-  if (!s.ok()) {
-    return s;
-  }
+//   // Check if a deferred IO error was set
+//   s = GetZoneDeferredStatus();
+//   if (!s.ok()) {
+//     return s;
+//   }
 
-  if (io_type != IOType::kWAL) {
-    s = ApplyFinishThreshold();
-    if (!s.ok()) {
-      return s;
-    }
-  }
+//   if (io_type != IOType::kWAL) {
+//     s = ApplyFinishThreshold();
+//     if (!s.ok()) {
+//       return s;
+//     }
+//   }
 
-  WaitForOpenIOZoneToken(io_type == IOType::kWAL);
+//   WaitForOpenIOZoneToken(io_type == IOType::kWAL);
 
-  /* Try to fill an already open zone(with the best life time diff) */
-  /*找到lifetime大于当前的最小的zone*/
-  s = GetBestOpenZoneMatch(file_lifetime, &best_diff, &allocated_zone);
-  if (!s.ok()) {
-    PutOpenIOZoneToken();
-    return s;
-  }
+//   /* Try to fill an already open zone(with the best life time diff) */
+//   /*找到lifetime大于当前的最小的zone*/
+//   if(MYMODE == true) {
+//     s = GetBestOpenZoneMatch(file_lifetime, &best_diff, &allocated_zone);
+//   } else {
+//     s = GetBestOpenZoneMatch(file_lifetime, &best_diff, &allocated_zone);
+//   }
+  
+//   if (!s.ok()) {
+//     PutOpenIOZoneToken();
+//     return s;
+//   }
 
-  // Holding allocated_zone if != nullptr
+//   // Holding allocated_zone if != nullptr
 
-  if (best_diff >= LIFETIME_DIFF_COULD_BE_WORSE) { //如果没有找到合适的
-    bool got_token = GetActiveIOZoneTokenIfAvailable();
+//   if (best_diff >= LIFETIME_DIFF_COULD_BE_WORSE) { //如果没有找到合适的
+//     bool got_token = GetActiveIOZoneTokenIfAvailable();
 
-    /* If we did not get a token, try to use the best match, even if the life
-     * time diff not good but a better choice than to finish an existing zone
-     * and open a new one
-     */
-    if (allocated_zone != nullptr) {
-      if (!got_token && best_diff == LIFETIME_DIFF_COULD_BE_WORSE) {
-        Debug(logger_,
-              "Allocator: avoided a finish by relaxing lifetime diff "
-              "requirement\n");
-      } else {
-        s = allocated_zone->CheckRelease();
-        if (!s.ok()) {
-          PutOpenIOZoneToken();
-          if (got_token) PutActiveIOZoneToken();
-          return s;
-        }
-        allocated_zone = nullptr;
-      }
-    }
+//     /* If we did not get a token, try to use the best match, even if the life
+//      * time diff not good but a better choice than to finish an existing zone
+//      * and open a new one
+//      */
+//     if (allocated_zone != nullptr) {
+//       if (!got_token && best_diff == LIFETIME_DIFF_COULD_BE_WORSE) {
+//         Debug(logger_,
+//               "Allocator: avoided a finish by relaxing lifetime diff "
+//               "requirement\n");
+//       } else {
+//         s = allocated_zone->CheckRelease();
+//         if (!s.ok()) {
+//           PutOpenIOZoneToken();
+//           if (got_token) PutActiveIOZoneToken();
+//           return s;
+//         }
+//         allocated_zone = nullptr;
+//       }
+//     }
 
-    /* If we haven't found an open zone to fill, open a new zone */
-    if (allocated_zone == nullptr) {
-      /* We have to make sure we can open an empty zone */
-      while (!got_token && !GetActiveIOZoneTokenIfAvailable()) {
-        s = FinishCheapestIOZone();
-        if (!s.ok()) {
-          PutOpenIOZoneToken();
-          return s;
-        }
-      }
+//     /* If we haven't found an open zone to fill, open a new zone */
+//     if (allocated_zone == nullptr) {
+//       /* We have to make sure we can open an empty zone */
+//       while (!got_token && !GetActiveIOZoneTokenIfAvailable()) {
+//         s = FinishCheapestIOZone();
+//         if (!s.ok()) {
+//           PutOpenIOZoneToken();
+//           return s;
+//         }
+//       }
 
-      s = AllocateEmptyZone(&allocated_zone);
-      if (!s.ok()) {
-        PutActiveIOZoneToken();
-        PutOpenIOZoneToken();
-        return s;
-      }
+//       s = AllocateEmptyZone(&allocated_zone);
+//       if (!s.ok()) {
+//         PutActiveIOZoneToken();
+//         PutOpenIOZoneToken();
+//         return s;
+//       }
 
-      if (allocated_zone != nullptr) {
-        assert(allocated_zone->IsBusy());
-        allocated_zone->lifetime_ = file_lifetime;
-        new_zone = true;
-      } else {
-        PutActiveIOZoneToken();
-      }
-    }
-  }
+//       if (allocated_zone != nullptr) {
+//         assert(allocated_zone->IsBusy());
+//         allocated_zone->lifetime_ = file_lifetime;
+//         new_zone = true;
+//       } else {
+//         PutActiveIOZoneToken();
+//       }
+//     }
+//   }
 
-  if (allocated_zone) {
-    assert(allocated_zone->IsBusy());
-    Debug(logger_,
-          "Allocating zone(new=%d) start: 0x%lx wp: 0x%lx lt: %d file lt: %d\n",
-          new_zone, allocated_zone->start_, allocated_zone->wp_,
-          allocated_zone->lifetime_, file_lifetime);
-  } else {
-    PutOpenIOZoneToken();
-  }
+//   if (allocated_zone) {
+//     assert(allocated_zone->IsBusy());
+//     Debug(logger_,
+//           "Allocating zone(new=%d) start: 0x%lx wp: 0x%lx lt: %d file lt: %d\n",
+//           new_zone, allocated_zone->start_, allocated_zone->wp_,
+//           allocated_zone->lifetime_, file_lifetime);
+//   } else {
+//     PutOpenIOZoneToken();
+//   }
 
-  if (io_type != IOType::kWAL) {
-    LogZoneStats();
-  }
+//   if (io_type != IOType::kWAL) {
+//     LogZoneStats();
+//   }
 
-  *out_zone = allocated_zone;
+//   *out_zone = allocated_zone;
 
-  metrics_->ReportGeneral(ZENFS_OPEN_ZONES_COUNT, open_io_zones_);
-  metrics_->ReportGeneral(ZENFS_ACTIVE_ZONES_COUNT, active_io_zones_);
+//   metrics_->ReportGeneral(ZENFS_OPEN_ZONES_COUNT, open_io_zones_);
+//   metrics_->ReportGeneral(ZENFS_ACTIVE_ZONES_COUNT, active_io_zones_);
 
-  return IOStatus::OK();
-}
+//   return IOStatus::OK();
+// }
 
 IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
                                           IOType io_type, Zone **out_zone, uint64_t new_lifetime) {
@@ -1010,7 +1015,12 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
   WaitForOpenIOZoneToken(io_type == IOType::kWAL);
 
   /* Try to fill an already open zone(with the best life time diff) */
-  s = GetBestOpenZoneMatch(new_lifetime, file_lifetime, &best_diff, &allocated_zone, 0);
+  if(MYMODE == true) {
+    s = GetBestOpenZoneMatch(new_lifetime, file_lifetime, &best_diff, &allocated_zone, 0);
+  } else {
+    s = GetBestOpenZoneMatch(file_lifetime, &best_diff, &allocated_zone, 0);
+  }
+  
   if (!s.ok()) {
     PutOpenIOZoneToken();
     return s;
