@@ -28,6 +28,8 @@ namespace fs = std::filesystem;
 
 namespace ROCKSDB_NAMESPACE {
 
+extern int global_clock;
+
 
 #if !defined(ROCKSDB_LITE) && defined(OS_LINUX)
 
@@ -139,7 +141,8 @@ class ZenFS : public FileSystemWrapper {
   std::mutex files_mtx_;
   std::shared_ptr<Logger> logger_;
   std::atomic<uint64_t> next_file_id_;
-  std::map<uint64_t, std::vector<uint64_t> >zone_file_list;
+  std::map<uint64_t, std::vector<uint64_t> >zone_file_list; //zone_begin -> file_id
+  std::map<uint64_t, std::vector<std::shared_ptr<ZoneFile>>> zone_file_list_all; //zone_begin -> file
 
   Zone* cur_meta_zone_ = nullptr;
   std::unique_ptr<ZenMetaLog> meta_log_;
@@ -306,7 +309,7 @@ class ZenFS : public FileSystemWrapper {
                                    std::unique_ptr<FSWritableFile>* result,
                                    IODebugContext* dbg) override;
   virtual IOStatus SetFileLifetime(std::string& fname, 
-                                   uint64_t lifetime);
+                                   uint64_t lifetime, int clock);
   virtual IOStatus ReuseWritableFile(const std::string& fname,
                                      const std::string& old_fname,
                                      const FileOptions& file_opts,
@@ -456,6 +459,8 @@ class ZenFS : public FileSystemWrapper {
                         const ZenFSSnapshotOptions& options);
 
   IOStatus MigrateExtents(const std::vector<ZoneExtentSnapshot*>& extents);
+  IOStatus GreedyMigrateExtents(const std::vector<ZoneExtentSnapshot*>& extents, uint64_t zone_id);
+  
 
   IOStatus MigrateFileExtents(
       const std::string& fname,
@@ -463,10 +468,9 @@ class ZenFS : public FileSystemWrapper {
 
  private:
   const uint64_t GC_START_LEVEL =
-      70;                      /* Enable GC when < 20% free space available */
+      25;                      /* Enable GC when < 20% free space available */
   const uint64_t GC_SLOPE = 3; /* GC agressiveness */
-  void GCWorker();
-  void MyGCWorker();
+  void MyGCWorker(const bool MYMODE);
 };
 #endif  // !defined(ROCKSDB_LITE) && defined(OS_LINUX)
 

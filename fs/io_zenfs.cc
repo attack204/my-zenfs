@@ -434,9 +434,16 @@ void ZoneFile::PushExtent() {
   extent_filepos_ = file_size_;
 }
 
+
+uint64_t max_global_clock = 0;
 IOStatus ZoneFile::AllocateNewZone() {
   Zone* zone;
   IOStatus s;
+  if(new_lifetime == 0) {
+    new_lifetime = max_global_clock;
+  } else {
+    max_global_clock = std::max(max_global_clock, new_lifetime);
+  }
   if(MYMODE == true) {
     s = zbd_->AllocateIOZone(lifetime_, io_type_, &zone, new_lifetime); //my_allocate_alogortihm
   } else {
@@ -449,8 +456,8 @@ IOStatus ZoneFile::AllocateNewZone() {
   SetActiveZone(zone);
   zone_begin = zone->start_;
   zone_id = zone->id;
-  printf("ZoneFile::AllocateNewZone address=%ld io_zone_number=%ld file_id=%ld zone_id=%ld lifetime=%ld min_lifetime=%ld max_lifetime=%ld zone_left=%ld\n", 
-    (long) this, GetZbd()->GetIOZones().size(), GetID(), GetActiveZone()->id, new_lifetime, zone->min_lifetime, zone->max_lifetime, zone->GetCapacityLeft());
+  printf("ZoneFile::AllocateNewZone file_name=%s io_zone_number=%ld allocate_file_id=%ld zone_id=%ld lifetime=%ld min_lifetime=%ld max_lifetime=%ld zone_left=%ld\n", 
+    debug_fname.c_str(), GetZbd()->GetIOZones().size(), GetID(), GetActiveZone()->id, new_lifetime, zone->min_lifetime, zone->max_lifetime, zone->GetCapacityLeft());
   
   extent_start_ = active_zone_->wp_;
   extent_filepos_ = file_size_;
@@ -708,13 +715,8 @@ IOStatus ZoneFile::Recover() {
 }
 
 void ZoneFile::ReplaceExtentList(std::vector<ZoneExtent*> new_list) {
-//  if(IsOpenForWR()) return ;
-  if(IsOpenForWR()) {
-    printf("ERROR: ReplaceExtentList ZoneFile id=%ld IsDeleted=%d IsOpenForWR=%d\n", GetID(), IsDeleted(), IsOpenForWR());
-  }
-  //while(IsOpenForWR());
-  //assert(!IsOpenForWR() && new_list.size() >= 0);
-  assert(new_list.size() == extents_.size());
+
+  assert(IsOpenForWR() && new_list.size() > 0);
 
   WriteLock lck(this);
   extents_ = new_list;

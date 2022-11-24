@@ -52,6 +52,8 @@ class ZoneSnapshot {
   uint64_t max_capacity;
 
   uint64_t id;
+  uint64_t min_lifetime;
+  uint64_t max_lifetime;
 
  public:
   ZoneSnapshot(const Zone& zone)
@@ -60,7 +62,9 @@ class ZoneSnapshot {
         capacity(zone.capacity_),
         used_capacity(zone.used_capacity_),
         max_capacity(zone.max_capacity_),
-        id(zone.id){}
+        id(zone.id),
+        min_lifetime(zone.min_lifetime),
+        max_lifetime(zone.max_lifetime){}
 };
 
 class ZoneExtentSnapshot {

@@ -9,6 +9,7 @@
 #include <cstdint>
 #if !defined(ROCKSDB_LITE) && defined(OS_LINUX)
 
+#include <queue>
 #include <errno.h>
 #include <libzbd/zbd.h>
 #include <stdlib.h>
@@ -34,6 +35,12 @@ namespace ROCKSDB_NAMESPACE {
 //true: use my algorithm
 //false: use default algorithm
 const bool MYMODE = true;
+//true: use greedy algorithm
+//false: use threshold algorithm
+const bool MYALGO = true;
+const bool DISABLE_RESET = true;
+extern int reset_zone_num;
+
 
 class ZonedBlockDevice;
 class ZonedBlockDeviceBackend;
@@ -99,6 +106,36 @@ class Zone {
   inline IOStatus CheckRelease();
 };
 
+class LogWriter {
+public:
+  LogWriter(Zone *zone) {
+    zone_list.push(zone);
+  };
+  LogWriter() = default;
+  // std::queue<Zone *> *get_zone_list() {
+  //   return &zone_list;
+  // };
+  // bool try_append(uint64_t lifetime) {
+  //   if(lifetime >= min_lifetime && lifetime <= max_lifetime) {
+      
+  //     return true;
+  //   }
+  //   return false;
+  // };
+  Zone *get_current_zone() {
+    if(active_zone->capacity_ == 0) {
+      zone_list.pop();
+      if(zone_list.empty()) return nullptr;
+      active_zone = zone_list.front();
+    }
+    return active_zone;
+  };
+private:
+  Zone * active_zone;
+  std::queue<Zone *> zone_list;
+ 
+};
+
 class ZonedBlockDeviceBackend {
  public:
   uint32_t block_sz_ = 0;
@@ -149,6 +186,7 @@ class ZonedBlockDevice {
  private:
   std::unique_ptr<ZonedBlockDeviceBackend> zbd_be_;
   std::vector<Zone *> io_zones;
+  std::vector<LogWriter *> log_writer_list;
   std::vector<Zone *> meta_zones;
   time_t start_time_;
   std::shared_ptr<Logger> logger_;
@@ -183,6 +221,21 @@ class ZonedBlockDevice {
                             std::shared_ptr<ZenFSMetrics> metrics =
                                 std::make_shared<NoZenFSMetrics>());
   virtual ~ZonedBlockDevice();
+  void new_log_writer(Zone *zone) {
+    log_writer_list.emplace_back(new LogWriter(zone));
+  }
+  bool remove_log_writer(LogWriter * log_writer) {
+    uint32_t pos = -1;
+    for(uint32_t i = 0; i < log_writer_list.size(); i++) {
+      if(log_writer_list[i] == log_writer) {
+        pos = i;
+      }
+    }
+    if(pos == static_cast<uint32_t>(-1)) return false;
+    log_writer_list.erase(log_writer_list.begin() + pos);
+    delete log_writer;
+    return true;
+  }
 
   IOStatus Open(bool readonly, bool exclusive);
 
@@ -201,6 +254,8 @@ class ZonedBlockDevice {
   uint32_t GetBlockSize();
 
   IOStatus ResetUnusedIOZones();
+  IOStatus MyResetUnusedIOZones();
+  IOStatus ResetTartetUnusedIOZones(uint64_t id);
   void LogZoneStats();
   void LogZoneUsage();
   void LogGarbageInfo();
@@ -236,7 +291,6 @@ class ZonedBlockDevice {
     return bytes_written_.load() - gc_bytes_written_.load();
   };
   uint64_t GetTotalBytesWritten() { return bytes_written_.load(); };
-
  private:
   IOStatus GetZoneDeferredStatus();
   bool GetActiveIOZoneTokenIfAvailable();
@@ -247,7 +301,7 @@ class ZonedBlockDevice {
                                 unsigned int *best_diff_out, Zone **zone_out,
                                 uint32_t min_capacity = 0);
   IOStatus GetBestOpenZoneMatch(uint64_t new_lifetime_, Env::WriteLifeTimeHint file_lifetime,
-                              unsigned int *best_diff_out, Zone **zone_out,
+                              unsigned int *best_diff_out, Zone **zone_out, bool flag,
                               uint32_t min_capacity = 0);
   IOStatus AllocateEmptyZone(Zone **zone_out);
 };
