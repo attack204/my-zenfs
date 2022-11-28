@@ -282,125 +282,7 @@ ZenFS::~ZenFS() {
   delete zbd_;
 }
 
-// void ZenFS::GCWorker() {
-//   uint32_t gc_times = 0;
-    
-//   while (run_gc_worker_) {
-//     //usleep(1000 * 1000 * 10);
-
-//     usleep(SLEEP_TIME);
-//     uint64_t non_free = zbd_->GetUsedSpace() + zbd_->GetReclaimableSpace();
-//     uint64_t free = zbd_->GetFreeSpace();
-//     uint64_t free_percent = (100 * free) / (free + non_free);
-//     ZenFSSnapshot snapshot;
-//     ZenFSSnapshotOptions options;
-//     if (free_percent > GC_START_LEVEL) continue;
-
-//     options.zone_ = 1;
-//     options.zone_file_ = 1;
-//     options.log_garbage_ = 1;
-
-//     GetZenFSSnapshot(snapshot, options);
-
-//     uint64_t threshold = (100 - GC_SLOPE * (GC_START_LEVEL - free_percent));
-//     std::set<uint64_t> migrate_zones_start;
-//     if(MYALGO == true) {
-//       sort(snapshot.zones_.begin(), snapshot.zones_.end(), [](ZoneSnapshot &a, ZoneSnapshot &b) {
-//         if(a.capacity == 0 && b.capacity == 0)  {
-//           return (100 - 100 * a.used_capacity / a.max_capacity) > (100 - 100 * b.used_capacity / b.max_capacity);
-//         } else {
-//           return a.capacity < b.capacity;
-//         }
-//       });
-//     }
-//     uint64_t greedy_zone_id = 0;
-//     uint64_t migrate_size  = 0;
-//     for (const auto& zone : snapshot.zones_) {
-
-//         std::vector<uint64_t> &file_list = zone_file_list[zone.start];
-//         std::vector<std::shared_ptr<ZoneFile>> &file_list_all = zone_file_list_all[zone.start];
-//         printf("zone: zone.start=%ld zone.id=%ld L=%ld R=%ld capacity=%ld used_capacity=%ld max_capacity=%ld file_list_size=%ld\n", 
-//               zone.start, zone.id, zone.min_lifetime, zone.max_lifetime, zone.capacity, zone.used_capacity, zone.max_capacity, file_list.size());
-//         for(auto &x: file_list_all) {
-//           ZoneFile& file = *x;
-//           printf("file_id=%ld lifetime=%ld\n", file.GetID(), file.new_lifetime);
-//         }
-//         puts("");
-
-
-
-//       if (zone.capacity == 0)  {
-//         uint64_t garbage_percent_approx =
-//             100 - 100 * zone.used_capacity / zone.max_capacity;
-//       //  printf("garbage_percent_approx=%ld threshold=%ld\n", garbage_percent_approx, threshold);
-        
-//         //如果说空间利用率较小，大于了threshold
-//         if ((garbage_percent_approx > threshold &&
-//             garbage_percent_approx < 100) || MYALGO == true) {
-//           printf("GC Work Start threshold=%ld free_percent=%ld  free=%ld non_free=%ld GC_START_LEVEL=%ld\n", threshold, free_percent, free, non_free, GC_START_LEVEL);
-
-
-//           // printf("garbage_percent_approx=%ld threshold=%ld zone.start=%ld zone.id=%ld L=%ld R=%ld capacity=%ld used_capacity=%ld max_capacity=%ld file_list_size=%ld\n", 
-//           //       garbage_percent_approx, threshold, zone.start, zone.id, zone.min_lifetime, zone.max_lifetime, zone.capacity, zone.used_capacity, zone.max_capacity, file_list.size());
-//           //  for(auto &x: file_list_all) {
-//           //   ZoneFile& file = *x;
-//           //   printf("file_id=%ld lifetime=%ld\n", file.GetID(), file.new_lifetime);
-//           // }
-//           // puts("");
-
-//           migrate_zones_start.emplace(zone.start);
-//           migrate_size += zone.used_capacity;
-//           migrate_file_num += file_list.size();
-
-//           greedy_zone_id = zone.id;
-//           if(MYALGO == true) break;
-//         }
-//       }
-//     }
-//     if(migrate_zones_start.size() > 0) {
-//       total_file_num += migrate_file_num;
-//       total_size += migrate_size;
-
-//       printf("GC Begin %d zone_size=%ld migrate_file_num=%ld migrate_size=%ld total_file_num=%ld total_size=%ld free=%ld drive_io=%ld rocks_io=%ld write_amp=%.2lf reset_zone_num=%d\n", 
-//         ++gc_times, migrate_zones_start.size(), migrate_file_num, migrate_size, total_file_num, total_size, zbd_->GetFreeSpace(), write_size_calc,  GetIOSTATS(), 1.0 * write_size_calc / GetIOSTATS(), reset_zone_num);
-//     }
-
-//     std::vector<ZoneExtentSnapshot*> migrate_exts;
-//     for (auto& ext : snapshot.extents_) {
-//       if (migrate_zones_start.find(ext.zone_start) !=
-//           migrate_zones_start.end()) {
-//         migrate_exts.push_back(&ext);
-//       }
-//     }
-
-//     if(MYALGO == true && migrate_exts.size() == 0 && greedy_zone_id) {
-//       IOStatus s;
-//       s = zbd_->ResetTartetUnusedIOZones(greedy_zone_id);
-//       if (!s.ok()) {
-//         Error(logger_, "Garbage collection failed");
-//       }
-//     } 
-
-//     if (migrate_exts.size() > 0) {
-    
-//       IOStatus s;
-//       Info(logger_, "Garbage collecting %d extents \n",
-//            (int)migrate_exts.size());
-//       if(MYALGO == true) {
-//          s = GreedyMigrateExtents(migrate_exts, greedy_zone_id);
-//       } else {
-//          s = MigrateExtents(migrate_exts);
-//       }
-//       if (!s.ok()) {
-//         Error(logger_, "Garbage collection failed");
-//       }
-//     }
-//   }
-// }
-
-
 const int SLEEP_TIME = 1000 * 1000;
-// const int GC_THRESHOLD = 50;
 
 int reset_zone_num = 0;
 uint64_t total_file_num = 0;
@@ -446,7 +328,6 @@ void ZenFS::MyGCWorker(const bool MODE) {
       if (zone.capacity == 0 && ((MODE == false) || (MODE == true && zone.min_lifetime != 0)))  {
 
           printf("GC Work Start threshold=%ld free_percent=%ld  free=%ld non_free=%ld GC_START_LEVEL=%ld\n", threshold, free_percent, free, non_free, GC_START_LEVEL);
-
           printf("zone: zone.start=%ld zone.id=%ld L=%ld R=%ld capacity=%ld used_capacity=%ld max_capacity=%ld file_list_size=%ld\n", 
                 zone.start, zone.id, zone.min_lifetime, zone.max_lifetime, zone.capacity, zone.used_capacity, zone.max_capacity, file_list.size());
           for(auto &x: file_list_all) {
@@ -454,6 +335,8 @@ void ZenFS::MyGCWorker(const bool MODE) {
             printf("file_id=%ld lifetime=%ld\n", file.GetID(), file.new_lifetime);
           }
           puts("");
+
+
           migrate_zones_start.emplace(zone.start);
           migrate_size += zone.used_capacity;
           migrate_file_num += file_list.size();
@@ -490,7 +373,7 @@ void ZenFS::MyGCWorker(const bool MODE) {
       total_file_num += migrate_file_num;
       total_size += migrate_size;
       total_extents += migrate_exts.size();
-      printf("GC Begin %d zone_size=%ld migrate_exts=%ld, migrate_file_num=%ld migrate_size=%ld total_extents=%ld total_file_num=%ld total_size=%ld free=%ld drive_io=%ld rocks_io=%ld write_amp=%.2lf reset_zone_num=%d\n", 
+      printf("GC Begin %d zone_size=%ld migrate_exts=%ld migrate_file_num=%ld migrate_size=%ld total_extents=%ld total_file_num=%ld total_size=%ld free=%ld drive_io=%ld rocks_io=%ld write_amp=%.2lf reset_zone_num=%d\n", 
         ++gc_times, migrate_zones_start.size(), migrate_exts.size(), migrate_file_num, migrate_size, total_extents, total_file_num, total_size, zbd_->GetFreeSpace(), write_size_calc,  GetIOSTATS(), 1.0 * write_size_calc / GetIOSTATS(), reset_zone_num);
     }
 

@@ -34,7 +34,7 @@ namespace ROCKSDB_NAMESPACE {
 
 //true: use my algorithm
 //false: use default algorithm
-const bool MYMODE = false;
+const bool MYMODE = true;
 //true: use greedy algorithm
 //false: use threshold algorithm
 const bool MYALGO = true;
