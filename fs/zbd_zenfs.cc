@@ -280,6 +280,7 @@ uint64_t ZonedBlockDevice::GetFreeSpace() {
   uint64_t free = 0;
   for (const auto z : io_zones) {
     free += z->capacity_;
+    printf("z->capacity=%ld\n", z->capacity_);
   }
   return free;
 }
