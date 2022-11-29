@@ -276,6 +276,7 @@ IOStatus ZonedBlockDevice::Open(bool readonly, bool exclusive) {
 }
 
 uint64_t ZonedBlockDevice::GetFreeSpace() {
+  printf("io_zones_number=%ld\n", io_zones.size());
   uint64_t free = 0;
   for (const auto z : io_zones) {
     free += z->capacity_;
