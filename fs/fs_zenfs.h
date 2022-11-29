@@ -65,6 +65,7 @@ class Superblock {
    */
   Superblock(ZonedBlockDevice* zbd, std::string aux_fs_path = "",
              uint32_t finish_threshold = 0, bool enable_gc = false) {
+              
     std::string uuid = Env::Default()->GenerateUniqueId();
     int uuid_len =
         std::min(uuid.length(),
@@ -79,8 +80,9 @@ class Superblock {
 
     block_size_ = zbd->GetBlockSize();
     zone_size_ = zbd->GetZoneSize() / block_size_;
-    nr_zones_ = zbd->GetNrZones();
 
+    nr_zones_ = zbd->GetNrZones();
+    printf("DEBUG zbd->GetNrZones() called %d\n", nr_zones_);
     strncpy(aux_fs_path_, aux_fs_path.c_str(), sizeof(aux_fs_path_) - 1);
 
     std::string zenfs_version = ZENFS_VERSION;
