@@ -103,7 +103,7 @@ IOStatus ZbdlibBackend::Open(bool readonly, bool exclusive,
 
   block_sz_ = info.pblock_size;
   zone_sz_ = info.zone_size;
-  nr_zones_ = std::min(static_cast<unsigned int>(100), info.nr_zones);
+  nr_zones_ = std::min(static_cast<unsigned int>(300), info.nr_zones);
   *max_active_zones = info.max_nr_active_zones;
   *max_open_zones = info.max_nr_open_zones;
   printf("device information block_sz=%d zone_sz=%ld nr_zones=%d mac_active_zones=%d max_open_zones=%d\n", block_sz_, zone_sz_, nr_zones_, *max_active_zones, *max_open_zones);
@@ -117,7 +117,7 @@ std::unique_ptr<ZoneList> ZbdlibBackend::ListZones() {
 
   ret = zbd_list_zones(read_f_, 0, zone_sz_ * nr_zones_, ZBD_RO_ALL,
                        (struct zbd_zone **)&zones, &nr_zones);
-  nr_zones = std::min(static_cast<unsigned int> (100), nr_zones);
+  nr_zones = std::min(static_cast<unsigned int> (300), nr_zones);
   if (ret) {
     return nullptr;
   }

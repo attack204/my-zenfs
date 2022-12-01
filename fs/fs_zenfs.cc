@@ -61,7 +61,7 @@ Status Superblock::DecodeFrom(Slice* input) {
   GetFixed32(input, &block_size_);
   GetFixed32(input, &zone_size_);
   GetFixed32(input, &nr_zones_);
-  nr_zones_ = std::min(static_cast<unsigned int>(100), nr_zones_);
+  nr_zones_ = std::min(static_cast<unsigned int>(300), nr_zones_);
   GetFixed32(input, &finish_treshold_);
   memcpy(&aux_fs_path_, input->data(), sizeof(aux_fs_path_));
   input->remove_prefix(sizeof(aux_fs_path_));
