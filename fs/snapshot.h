@@ -54,6 +54,7 @@ class ZoneSnapshot {
   uint64_t id;
   uint64_t min_lifetime;
   uint64_t max_lifetime;
+  std::vector<uint64_t> lifetime_list;
 
  public:
   ZoneSnapshot(const Zone& zone)
@@ -64,7 +65,9 @@ class ZoneSnapshot {
         max_capacity(zone.max_capacity_),
         id(zone.id),
         min_lifetime(zone.min_lifetime),
-        max_lifetime(zone.max_lifetime){}
+        max_lifetime(zone.max_lifetime), 
+        lifetime_list(zone.lifetime_list)
+        {}
 };
 
 class ZoneExtentSnapshot {

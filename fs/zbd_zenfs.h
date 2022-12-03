@@ -78,6 +78,7 @@ class Zone {
   uint64_t max_lifetime;
   std::atomic<uint64_t> used_capacity_;
   std::vector<uint64_t> files_id;
+  std::vector<uint64_t> lifetime_list;
 
   IOStatus Reset();
   IOStatus Finish();
@@ -183,9 +184,9 @@ enum class ZbdBackendType {
 };
 
 class ZonedBlockDevice {
- private:
+ private: 
+  std::vector<Zone *> io_zones; 
   std::unique_ptr<ZonedBlockDeviceBackend> zbd_be_;
-  std::vector<Zone *> io_zones;
   std::vector<LogWriter *> log_writer_list;
   std::vector<Zone *> meta_zones;
   time_t start_time_;
@@ -223,6 +224,9 @@ class ZonedBlockDevice {
   virtual ~ZonedBlockDevice();
   void new_log_writer(Zone *zone) {
     log_writer_list.emplace_back(new LogWriter(zone));
+  }
+  std::vector<Zone *> &get_io_zones() {
+    return io_zones;
   }
   bool remove_log_writer(LogWriter * log_writer) {
     uint32_t pos = -1;
