@@ -687,7 +687,8 @@ IOStatus ZonedBlockDevice::GetBestOpenZoneMatch(uint64_t new_lifetime_,
   unsigned int best_diff = LIFETIME_DIFF_NOT_GOOD;
   Zone *allocated_zone = nullptr;
   IOStatus s;
-  uint64_t mx = 0;//max_lifetime最大的zone
+  const int INF = 1e9;
+  uint64_t mx = INF;//dis最小的zone
 
 
   // for(const auto log_writer: log_writer_list) {
@@ -726,19 +727,18 @@ IOStatus ZonedBlockDevice::GetBestOpenZoneMatch(uint64_t new_lifetime_,
   //     }
   //   }
   // }
-  
   for (const auto z : io_zones) {
     if (z->Acquire()) {
       if ((z->used_capacity_ > 0) && !z->IsFull() &&
           z->capacity_ >= min_capacity) {
         printf("GetBestOpenZoneMatch zone_id=%ld new_lifetime_=%ld min_lifetime=%ld max_lifetime=%ld global_clock=%d\n", z->id, new_lifetime_, z->min_lifetime, z->max_lifetime, global_clock);
         unsigned int diff = GetLifeTimeDiff(z->lifetime_, file_lifetime);
-     
-        if( (flag == 0 && ((new_lifetime_ >= z->min_lifetime && new_lifetime_ <= z->max_lifetime))) || 
-            (flag == 1 && (new_lifetime_ >= z->min_lifetime && z->max_lifetime > mx))) {
 
+        if( (flag == 0 && ((new_lifetime_ >= z->min_lifetime && new_lifetime_ <= z->max_lifetime))) || 
+            (flag == 1 && ((new_lifetime_ < z->min_lifetime && z->min_lifetime - new_lifetime_ < mx) ||
+                            (new_lifetime_ > z->max_lifetime && new_lifetime_ - z->max_lifetime < mx)))) {
+          mx = (new_lifetime_ < z->min_lifetime) ? z->min_lifetime - new_lifetime_ : new_lifetime_ - z->max_lifetime;
           if (allocated_zone != nullptr) { //flag == 1 need to find the maximal max_lifetime
-            if(flag == 1) mx =  z->max_lifetime;
             s = allocated_zone->CheckRelease();
             if (!s.ok()) {
               printf("InRangeButCheckRelease Fail\n");
@@ -1019,6 +1019,9 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
   /* Try to fill an already open zone(with the best life time diff) */
   if(MYMODE == true) {
     s = GetBestOpenZoneMatch(new_lifetime, file_lifetime, &best_diff, &allocated_zone, 0);
+    if(allocated_zone == nullptr) { //try again, find the 
+       s = GetBestOpenZoneMatch(new_lifetime, file_lifetime, &best_diff, &allocated_zone, 1);
+    }
   } else {
     s = GetBestOpenZoneMatch(file_lifetime, &best_diff, &allocated_zone, 0);
   }
@@ -1073,7 +1076,7 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
     
 
       if (allocated_zone != nullptr) {
-        const int T = 100;
+        const int T = 50;
         const long long MAX = 1e9;
         assert(allocated_zone->IsBusy());
         allocated_zone->lifetime_ = file_lifetime;
