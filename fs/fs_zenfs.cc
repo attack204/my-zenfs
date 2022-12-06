@@ -331,7 +331,7 @@ void ZenFS::MyGCWorker(const bool MODE) {
       if (zone.capacity == 0 && ((MODE == false) || (MODE == true && zone.min_lifetime != 0)))  {
 
           printf("GC Work Start threshold=%ld free_percent=%ld  free=%ld non_free=%ld GC_START_LEVEL=%ld\n", threshold, free_percent, free, non_free, GC_START_LEVEL);
-          printf("zone: zone.start=%ld zone.id=%ld L=%ld R=%ld capacity=%ld used_capacity=%ld max_capacity=%ld file_list_size=%ld\n", 
+          printf("zone: zone_start=%ld zone_id=%ld L=%ld R=%ld capacity=%ld used_capacity=%ld max_capacity=%ld file_list_size=%ld\n", 
                 zone.start, zone.id, zone.min_lifetime, zone.max_lifetime, zone.capacity, zone.used_capacity, zone.max_capacity, file_list.size());
           for(auto &x: file_list_all) {
             ZoneFile& file = *x;
@@ -377,11 +377,17 @@ void ZenFS::MyGCWorker(const bool MODE) {
       total_file_num += migrate_file_num;
       total_size += migrate_size;
       total_extents += migrate_exts.size();
-      printf("GC Begin %d zone_size=%ld migrate_exts=%ld migrate_file_num=%ld migrate_size=%ld total_extents=%ld total_file_num=%ld total_size=%ld free=%ld drive_io=%ld rocks_io=%ld write_amp=%.2lf reset_zone_num=%d\n", 
-        ++gc_times, migrate_zones_start.size(), migrate_exts.size(), migrate_file_num, migrate_size, total_extents, total_file_num, total_size, zbd_->GetFreeSpace(), write_size_calc,  GetIOSTATS(), 1.0 * write_size_calc / GetIOSTATS(), reset_zone_num);
+      printf("GC Begin %d zone_id=%ld zone_size=%ld migrate_exts=%ld migrate_file_num=%ld migrate_size=%ld total_extents=%ld total_file_num=%ld total_size=%ld free=%ld drive_io=%ld rocks_io=%ld write_amp=%.2lf reset_zone_num=%d\n", 
+        ++gc_times, greedy_zone_id, migrate_zones_start.size(), migrate_exts.size(), migrate_file_num, migrate_size, total_extents, total_file_num, total_size, zbd_->GetFreeSpace(), write_size_calc,  GetIOSTATS(), 1.0 * write_size_calc / GetIOSTATS(), reset_zone_num);
       sort(lifetime_list.begin(), lifetime_list.end());
       if(!lifetime_list.empty()) {
-        printf("Lifetime_list: min_lifetime=%ld max_lifetime=%ld\n", lifetime_list[0], lifetime_list[lifetime_list.size() - 1]);
+        printf("Zone_id=%ld Lifetime_list: min_lifetime=%ld max_lifetime=%ld [", greedy_zone_id, lifetime_list[0], lifetime_list[lifetime_list.size() - 1]);
+        for(auto &x: lifetime_list) {
+          printf("%ld ", x);
+        }
+        printf("]\n");
+      } else {
+        printf("ERROR: lifetime_list is empty\n");
       }
       
     }
@@ -738,8 +744,6 @@ IOStatus ZenFS::NewWritableFile(const std::string& filename,
 IOStatus ZenFS::SetFileLifetime(std::string& fname,
                                 uint64_t lifetime, int clock, bool flag) {
   global_clock = clock;
-  //SetFileLifetime Fail rocksdbtest/dbbench/000046.sst -1923267948
-  //SetFileLifetime Success /rocksdbtest/dbbench/000046.sst -1923267948
   const uint64_t MAX = 1e9;
   if(lifetime > MAX) {
     lifetime = 0; //实际上这个可以走WRITE_LIFETIME_HINT
@@ -756,18 +760,24 @@ IOStatus ZenFS::SetFileLifetime(std::string& fname,
         printf("ERROR: ZoneFile has actived file_id=%ld zone_id=%ld\n", tmp->GetID(), tmp->GetActiveZone()->id);
       }
     } else {
+      uint64_t lifetime_list_size = 0;
       if(tmp->zone_id != 0) {
         for (auto *zone : zbd_->get_io_zones()) {
           //printf("zone_information zone_id=%ld zone_capacity=%ld zone_max_capacity=%ld zone_used_capacity=%ld\n",  zone->id, zone->capacity_, zone->max_capacity_, zone->used_capacity_.load());
           if(zone->id == tmp->zone_id) {
             zone->lifetime_list.emplace_back(lifetime);
+            lifetime_list_size = zone->lifetime_list.size();
+            break;
           }
+        }
+        if(tmp->GetActiveZone() == NULL) {
+          printf("Flag == 1 But GetActiveZone() is NULL\n");
         }
       } else {
         printf("ERROR: Flag = 1 GetActiveZone is NULL\n");
       } 
-      printf("SetFileLifetime Success name=%s set_file_id=%ld lifetime=%ld flag=%d\n", f.c_str(), files_[f]->GetID(), lifetime, flag);
-   
+      printf("SetFileLifetime Success name=%s get_io_zones_size=%ld lifetime_list_size=%ld set_zone_id=%ld set_file_id=%ld lifetime=%ld flag=%d\n", f.c_str(),  zbd_->get_io_zones().size(), lifetime_list_size, tmp->zone_id, files_[f]->GetID(), lifetime, flag);
+
     }
     return IOStatus::OK();
   }
