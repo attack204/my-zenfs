@@ -381,7 +381,7 @@ void ZenFS::MyGCWorker(const bool MODE) {
         ++gc_times, greedy_zone_id, migrate_zones_start.size(), migrate_exts.size(), migrate_file_num, migrate_size, total_extents, total_file_num, total_size, zbd_->GetFreeSpace(), write_size_calc,  GetIOSTATS(), 1.0 * write_size_calc / GetIOSTATS(), reset_zone_num);
       sort(lifetime_list.begin(), lifetime_list.end());
       if(!lifetime_list.empty()) {
-        printf("Zone_id=%ld Lifetime_list: min_lifetime=%ld max_lifetime=%ld [", greedy_zone_id, lifetime_list[0], lifetime_list[lifetime_list.size() - 1]);
+        printf("Zone_id=%ld Lifetime_list: min_lifetime=%ld max_lifetime=%ld diff=%ld [", greedy_zone_id, lifetime_list[0], lifetime_list[lifetime_list.size() - 1], lifetime_list[lifetime_list.size() - 1] - lifetime_list[0]);
         for(auto &x: lifetime_list) {
           printf("%ld ", x);
         }
