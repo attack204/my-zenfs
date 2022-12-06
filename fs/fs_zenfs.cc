@@ -384,7 +384,7 @@ void ZenFS::MyGCWorker(const bool MODE) {
       sort(lifetime_list.begin(), lifetime_list.end());
       sort(prediction_lifetime_list.begin(), prediction_lifetime_list.end());
       if(!lifetime_list.empty()) {
-        printf("Zone_id=%ld Real Lifetime_list: min_lifetime=%ld max_lifetime=%ld diff=%ld [", greedy_zone_id, lifetime_list[0], lifetime_list[lifetime_list.size() - 1], lifetime_list[lifetime_list.size() - 1] - lifetime_list[0]);
+        printf("Zone_id=%ld Real Lifetime_list size=%ld: min_lifetime=%ld max_lifetime=%ld diff=%ld [", greedy_zone_id, lifetime_list.size(), lifetime_list[0], lifetime_list[lifetime_list.size() - 1], lifetime_list[lifetime_list.size() - 1] - lifetime_list[0]);
         for(auto &x: lifetime_list) {
           printf("%ld ", x);
         }
@@ -394,7 +394,7 @@ void ZenFS::MyGCWorker(const bool MODE) {
         printf("ERROR: lifetime_list is empty\n");
       }
       if(!prediction_lifetime_list.empty()) {
-        printf("Zone_id=%ld Prediction Lifetime_list: min_lifetime=%ld max_lifetime=%ld diff=%ld [", greedy_zone_id, prediction_lifetime_list[0], prediction_lifetime_list[prediction_lifetime_list.size() - 1], prediction_lifetime_list[prediction_lifetime_list.size() - 1] - prediction_lifetime_list[0]);
+        printf("Zone_id=%ld Prediction Lifetime_list size=%ld: min_lifetime=%ld max_lifetime=%ld diff=%ld [", greedy_zone_id, prediction_lifetime_list.size(), prediction_lifetime_list[0], prediction_lifetime_list[prediction_lifetime_list.size() - 1], prediction_lifetime_list[prediction_lifetime_list.size() - 1] - prediction_lifetime_list[0]);
         for(auto &x: prediction_lifetime_list) {
           printf("%ld ", x);
         }
