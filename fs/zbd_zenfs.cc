@@ -1125,6 +1125,8 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
 
  
   *out_zone = allocated_zone;
+  if(allocated_zone != nullptr)
+    allocated_zone->prediction_lifetime_list.emplace_back(new_lifetime);
 
 
 

@@ -79,6 +79,7 @@ class Zone {
   std::atomic<uint64_t> used_capacity_;
   std::vector<uint64_t> files_id;
   std::vector<uint64_t> lifetime_list;
+  std::vector<uint64_t> prediction_lifetime_list;
 
   IOStatus Reset();
   IOStatus Finish();

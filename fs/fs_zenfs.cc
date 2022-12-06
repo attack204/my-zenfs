@@ -323,6 +323,7 @@ void ZenFS::MyGCWorker(const bool MODE) {
     uint64_t migrate_file_num = 0;
     uint64_t migrate_size  = 0;
     std::vector<uint64_t> lifetime_list;
+    std::vector<uint64_t> prediction_lifetime_list;
     for (const auto& zone : snapshot.zones_) {
     
       std::vector<uint64_t> &file_list = zone_file_list[zone.start];
@@ -359,6 +360,7 @@ void ZenFS::MyGCWorker(const bool MODE) {
           zone_file_list_all[zone.start].clear();
           greedy_zone_id = zone.id;
           lifetime_list = zone.lifetime_list;
+          prediction_lifetime_list = zone.prediction_lifetime_list;
            if(MYALGO == true) break;
         // }
       }
@@ -380,9 +382,20 @@ void ZenFS::MyGCWorker(const bool MODE) {
       printf("GC Begin %d zone_id=%ld zone_size=%ld migrate_exts=%ld migrate_file_num=%ld migrate_size=%ld total_extents=%ld total_file_num=%ld total_size=%ld free=%ld drive_io=%ld rocks_io=%ld write_amp=%.2lf reset_zone_num=%d\n", 
         ++gc_times, greedy_zone_id, migrate_zones_start.size(), migrate_exts.size(), migrate_file_num, migrate_size, total_extents, total_file_num, total_size, zbd_->GetFreeSpace(), write_size_calc,  GetIOSTATS(), 1.0 * write_size_calc / GetIOSTATS(), reset_zone_num);
       sort(lifetime_list.begin(), lifetime_list.end());
+      sort(prediction_lifetime_list.begin(), prediction_lifetime_list.end());
       if(!lifetime_list.empty()) {
-        printf("Zone_id=%ld Lifetime_list: min_lifetime=%ld max_lifetime=%ld diff=%ld [", greedy_zone_id, lifetime_list[0], lifetime_list[lifetime_list.size() - 1], lifetime_list[lifetime_list.size() - 1] - lifetime_list[0]);
+        printf("Zone_id=%ld Real Lifetime_list: min_lifetime=%ld max_lifetime=%ld diff=%ld [", greedy_zone_id, lifetime_list[0], lifetime_list[lifetime_list.size() - 1], lifetime_list[lifetime_list.size() - 1] - lifetime_list[0]);
         for(auto &x: lifetime_list) {
+          printf("%ld ", x);
+        }
+        printf("]\n");
+        
+      } else {
+        printf("ERROR: lifetime_list is empty\n");
+      }
+      if(!prediction_lifetime_list.empty()) {
+        printf("Zone_id=%ld Prediction Lifetime_list: min_lifetime=%ld max_lifetime=%ld diff=%ld [", greedy_zone_id, prediction_lifetime_list[0], prediction_lifetime_list[prediction_lifetime_list.size() - 1], prediction_lifetime_list[prediction_lifetime_list.size() - 1] - prediction_lifetime_list[0]);
+        for(auto &x: prediction_lifetime_list) {
           printf("%ld ", x);
         }
         printf("]\n");
@@ -756,6 +769,7 @@ IOStatus ZenFS::SetFileLifetime(std::string& fname,
     std::shared_ptr<ZoneFile> tmp = files_[f];
     if(!flag) {
       tmp->new_lifetime = lifetime;
+
       if(tmp->GetActiveZone() != NULL) {
         printf("ERROR: ZoneFile has actived file_id=%ld zone_id=%ld\n", tmp->GetID(), tmp->GetActiveZone()->id);
       }
