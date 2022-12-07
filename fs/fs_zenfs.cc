@@ -290,7 +290,7 @@ int reset_zone_num = 0;
 uint64_t total_file_num = 0;
 uint64_t total_size = 0;
 uint64_t total_extents = 0;
-const int LIMIT = 5;
+const int LIMIT = 10;
 void ZenFS::MyGCWorker(const bool MODE) {
   uint32_t gc_times = 0;
 
@@ -377,13 +377,12 @@ void ZenFS::MyGCWorker(const bool MODE) {
      
         tot++;
         if (MYALGO == true && tot == LIMIT) break;
-        // }
       }
     }
-    if (tot != LIMIT) {
-      printf("ERROR: can't GC LIMIT number\n");
-      assert(0);
-    }
+    // if (tot != LIMIT) {
+    //   printf("ERROR: can't GC LIMIT number\n");
+    //   assert(0);
+    // }
 
     std::vector<ZoneExtentSnapshot*> migrate_exts;
     for (auto& ext : snapshot.extents_) {
