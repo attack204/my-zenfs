@@ -733,8 +733,8 @@ IOStatus ZonedBlockDevice::GetBestOpenZoneMatch(uint64_t new_lifetime_,
           z->capacity_ >= min_capacity) {
         printf("GetBestOpenZoneMatch zone_id=%ld new_lifetime_=%ld min_lifetime=%ld max_lifetime=%ld global_clock=%d\n", z->id, new_lifetime_, z->min_lifetime, z->max_lifetime, global_clock);
         if( (flag == 0 && ((new_lifetime_ >= z->min_lifetime && new_lifetime_ <= z->max_lifetime))) || 
-            (flag == 1 && ((new_lifetime_ < z->min_lifetime && z->min_lifetime - new_lifetime_ < mx && z->min_lifetime - new_lifetime_ <= MAX_DIFFTIME) ||
-                            (new_lifetime_ > z->max_lifetime && new_lifetime_ - z->max_lifetime < mx && new_lifetime_ - z->max_lifetime <= MAX_DIFFTIME)))) {
+            (flag == 1 && ((((new_lifetime_ < z->min_lifetime) && (z->min_lifetime - new_lifetime_ < mx) && (z->min_lifetime - new_lifetime_ <= MAX_DIFFTIME)))
+                        || ((new_lifetime_ > z->max_lifetime) && (new_lifetime_ - z->max_lifetime < mx) && (new_lifetime_ - z->max_lifetime <= MAX_DIFFTIME))))) {
           mx = (new_lifetime_ < z->min_lifetime) ? z->min_lifetime - new_lifetime_ : new_lifetime_ - z->max_lifetime;
           if (allocated_zone != nullptr) { //flag == 1 need to find the maximal max_lifetime
             s = allocated_zone->CheckRelease();

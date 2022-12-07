@@ -40,7 +40,7 @@ const bool MYMODE = true;
 //false: use threshold algorithm
 const uint64_t MAX_DIFFTIME = INF;
 const int T = 100;
-const int K = INF;
+const int K = INF; //gc top k
 
 
 
