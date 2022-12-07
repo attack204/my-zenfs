@@ -687,7 +687,6 @@ IOStatus ZonedBlockDevice::GetBestOpenZoneMatch(uint64_t new_lifetime_,
   unsigned int best_diff = LIFETIME_DIFF_NOT_GOOD;
   Zone *allocated_zone = nullptr;
   IOStatus s;
-  const int INF = 1e9;
   uint64_t mx = INF;//dis最小的zone
 
 

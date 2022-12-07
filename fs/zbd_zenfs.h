@@ -34,12 +34,21 @@ namespace ROCKSDB_NAMESPACE {
 
 //true: use my algorithm
 //false: use default algorithm
+const int INF = 1e9;
 const bool MYMODE = true;
 //true: use greedy algorithm
 //false: use threshold algorithm
-const uint64_t MAX_DIFFTIME = 200;
+const uint64_t MAX_DIFFTIME = INF;
 const int T = 100;
-const int K = 99999;
+const int K = INF;
+
+
+
+
+
+
+
+
 
 
 
