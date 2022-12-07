@@ -461,7 +461,7 @@ class ZenFS : public FileSystemWrapper {
                         const ZenFSSnapshotOptions& options);
 
   IOStatus MigrateExtents(const std::vector<ZoneExtentSnapshot*>& extents);
-  IOStatus GreedyMigrateExtents(const std::vector<ZoneExtentSnapshot*>& extents, uint64_t zone_id);
+  IOStatus GreedyMigrateExtents(const std::vector<ZoneExtentSnapshot*>& extents, std::vector<uint64_t>zone_id);
   
 
   IOStatus MigrateFileExtents(
