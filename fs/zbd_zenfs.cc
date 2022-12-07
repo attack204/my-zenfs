@@ -727,7 +727,7 @@ IOStatus ZonedBlockDevice::GetBestOpenZoneMatch(uint64_t new_lifetime_,
   //     }
   //   }
   // }
-  const uint64_t MAX_DIFFTIME = 200;
+  
   for (const auto z : io_zones) {
     if (z->Acquire()) {
       if ((z->used_capacity_ > 0) && !z->IsFull() &&
@@ -1075,7 +1075,7 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
     
 
       if (allocated_zone != nullptr) {
-        const int T = 50;
+      
         const long long MAX = 1e9;
         assert(allocated_zone->IsBusy());
         allocated_zone->lifetime_ = file_lifetime;

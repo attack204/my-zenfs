@@ -37,6 +37,14 @@ namespace ROCKSDB_NAMESPACE {
 const bool MYMODE = true;
 //true: use greedy algorithm
 //false: use threshold algorithm
+const uint64_t MAX_DIFFTIME = 200;
+const int T = 100;
+const int K = 99999;
+
+
+
+//don't need to modify
+
 const bool MYALGO = true;
 const bool DISABLE_RESET = true;
 extern int reset_zone_num;

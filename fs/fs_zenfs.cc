@@ -290,7 +290,6 @@ int reset_zone_num = 0;
 uint64_t total_file_num = 0;
 uint64_t total_size = 0;
 uint64_t total_extents = 0;
-const int LIMIT = 99999;
 void ZenFS::MyGCWorker(const bool MODE) {
   uint32_t gc_times = 0;
 
@@ -376,7 +375,7 @@ void ZenFS::MyGCWorker(const bool MODE) {
 
      
         tot++;
-        if (MYALGO == true && tot == LIMIT) break;
+        if (MYALGO == true && tot == K) break;
       }
     }
     // if (tot != LIMIT) {
