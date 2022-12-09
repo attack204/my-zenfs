@@ -38,8 +38,7 @@ const int INF = 1e9;
 const bool MYMODE = true;
 //true: use greedy algorithm
 //false: use threshold algorithm
-const uint64_t MAX_DIFFTIME = INF;
-const int T = 100;
+const int T = 350;
 const int K = INF; //gc top k
 
 
