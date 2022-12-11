@@ -322,7 +322,7 @@ class ZonedBlockDevice {
                                 unsigned int *best_diff_out, Zone **zone_out,
                                 uint32_t min_capacity = 0);
   IOStatus GetBestOpenZoneMatch(uint64_t new_lifetime_, Env::WriteLifeTimeHint file_lifetime,
-                              unsigned int *best_diff_out, Zone **zone_out, bool flag,
+                              unsigned int *best_diff_out, Zone **zone_out, int flag,
                               uint32_t min_capacity = 0);
   IOStatus AllocateEmptyZone(Zone **zone_out);
 };
