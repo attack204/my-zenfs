@@ -391,9 +391,9 @@ void ZenFS::MyGCWorker(const bool MODE) {
       total_file_num += migrate_file_num;
       total_size += migrate_size;
       total_extents += migrate_exts.size();
-      printf("GC Begin %d [", ++gc_times);
-      for(auto &x: greedy_zone_id) printf("%ld ", x);
-      printf("] ");
+      printf("GC Begin %d ", ++gc_times);
+     // for(auto &x: greedy_zone_id) printf("%ld ", x);
+     // printf("] ");
       printf(
           "zone_size=%ld migrate_exts=%ld "
           "migrate_file_num=%ld migrate_size=%ld total_extents=%ld "

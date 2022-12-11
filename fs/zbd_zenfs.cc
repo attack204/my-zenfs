@@ -747,21 +747,13 @@ IOStatus ZonedBlockDevice::GetBestOpenZoneMatch(
             z->id, new_lifetime_, z->min_lifetime, z->max_lifetime,
             global_clock);
         const int MAX_DIFFTIME = 1e9;
-        if( (flag == 0 && ((new_lifetime_ >= z->min_lifetime && new_lifetime_
-        <= z->max_lifetime))) ||
-            (flag == 1 && (((new_lifetime_ < z->min_lifetime) &&
-            (z->min_lifetime - new_lifetime_ < mx))
-                        || ((new_lifetime_ > z->max_lifetime) &&
-                        (new_lifetime_ - z->max_lifetime < mx) &&
-                        (new_lifetime_ - z->max_lifetime <= MAX_DIFFTIME)))))
-                        {
-        // if ((flag == 0 && ((new_lifetime_ >= z->min_lifetime &&
-        //                     new_lifetime_ <= z->max_lifetime))) ||
-        //     (flag == 1 && (new_lifetime_ < z->min_lifetime) &&
-        //        (z->min_lifetime - new_lifetime_ < mx))) {
+        if( (flag == 0 && (new_lifetime_ >= z->min_lifetime) && (new_lifetime_ <= z->max_lifetime)) ||
+            (flag == 1 && (new_lifetime_  < z->min_lifetime) && (z->min_lifetime - new_lifetime_ < mx)) || 
+            (flag == 2 && (new_lifetime_  > z->max_lifetime) && (new_lifetime_ - z->max_lifetime < mx) && (new_lifetime_ - z->max_lifetime <= MAX_DIFFTIME)))
+        {
           if(flag == 1 && (new_lifetime_ < z->min_lifetime)) 
             mx = z->min_lifetime - new_lifetime_;
-          if(flag == 1 && (new_lifetime_ > z->max_lifetime))
+          if(flag == 2 && (new_lifetime_ > z->max_lifetime))
             mx = new_lifetime_ - z->max_lifetime;
           if (allocated_zone != nullptr) {  // flag == 1 need to find the maximal max_lifetime
             s = allocated_zone->CheckRelease();
@@ -1050,6 +1042,11 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
       s = GetBestOpenZoneMatch(new_lifetime, file_lifetime, &best_diff,
                                &allocated_zone, 1);
     }
+    if (allocated_zone == nullptr) {  // try again, find the
+      s = GetBestOpenZoneMatch(new_lifetime, file_lifetime, &best_diff,
+                               &allocated_zone, 2);
+    }
+
   } else {
     s = GetBestOpenZoneMatch(file_lifetime, &best_diff, &allocated_zone, 0);
   }
