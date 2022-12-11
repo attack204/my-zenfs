@@ -38,7 +38,7 @@ const int INF = 1e9;
 const bool MYMODE = true;
 //true: use greedy algorithm
 //false: use threshold algorithm
-const int T = 350;
+const int T = 200;
 const int K = INF; //gc top k
 
 

@@ -395,14 +395,14 @@ void ZenFS::MyGCWorker(const bool MODE) {
      // for(auto &x: greedy_zone_id) printf("%ld ", x);
      // printf("] ");
       printf(
-          "zone_size=%ld migrate_exts=%ld "
-          "migrate_file_num=%ld migrate_size=%ld total_extents=%ld "
-          "total_file_num=%ld total_size=%ld free=%ld drive_io=%ld "
-          "rocks_io=%ld write_amp=%.2lf reset_zone_num=%d\n",
-          migrate_zones_start.size(),
-          migrate_exts.size(), migrate_file_num, migrate_size, total_extents,
-          total_file_num, total_size, zbd_->GetFreeSpace(), write_size_calc,
-          GetIOSTATS(), 1.0 * write_size_calc / GetIOSTATS(), reset_zone_num);
+          "zone_size=%ld  "
+          "total_extents=%ld total_file_num=%ld total_size=%ld free=%ld" 
+          "drive_io=%ld rocks_io=%ld write_amp=%.2lf" 
+          "reset_zone_num=%d migrate_exts=%ld migrate_file_num=%ld migrate_size=%ld\n",
+          migrate_zones_start.size(), 
+          total_extents, total_file_num, total_size, zbd_->GetFreeSpace(), 
+          write_size_calc, GetIOSTATS(), 1.0 * write_size_calc / GetIOSTATS(), 
+          reset_zone_num migrate_exts.size(), migrate_file_num, migrate_size,);
 
 
       for(uint64_t i = 0; i < greedy_zone_id.size(); i++) {
