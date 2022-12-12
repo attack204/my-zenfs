@@ -789,14 +789,6 @@ IOStatus ZonedBlockDevice::GetBestOpenZoneMatch(
     }
   }
 
-  if (allocated_zone != nullptr) {
-    printf("Have Gotten Best Zone zone_id=%ld best_diff=%d\n",
-           allocated_zone->id, best_diff);
-    if (flag == 1) {
-      allocated_zone->max_lifetime = mx;
-    }
-  } else
-    printf("Fail to get best zone");
   *best_diff_out = best_diff;
   *zone_out = allocated_zone;
 
