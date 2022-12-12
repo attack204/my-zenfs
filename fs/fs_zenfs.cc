@@ -427,7 +427,7 @@ void ZenFS::MyGCWorker(const bool MODE) {
             printf("%ld ", x);
           }
           printf("]\n");
-
+          lifetime_list.clear();
         } else {
           printf("ERROR: lifetime_list is empty\n");
         }
@@ -444,6 +444,7 @@ void ZenFS::MyGCWorker(const bool MODE) {
             printf("%ld ", x);
           }
           printf("]\n");
+          prediction_lifetime_list.clear();
         } else {
           printf("ERROR: lifetime_list is empty\n");
         }
@@ -804,7 +805,9 @@ IOStatus ZenFS::NewWritableFile(const std::string& filename,
   return OpenWritableFile(fname, file_opts, result, nullptr, false);
 }
 
-IOStatus ZenFS::SetFileLifetime(std::string& fname, uint64_t lifetime,
+//0 prediction lifetime
+//1 real lifetime
+IOStatus ZenFS::SetFileLifetime(std::string fname, uint64_t lifetime,
                                 int clock, bool flag) {
   global_clock = clock;
   const uint64_t MAX = 1e9;

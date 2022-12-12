@@ -1118,15 +1118,8 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
         allocated_zone->min_lifetime = new_lifetime;
         allocated_zone->max_lifetime = new_lifetime + T;
         printf("allocated_new_zone znoe_id=%ld l=%ld r=%ld\n", allocated_zone->id, allocated_zone->min_lifetime, allocated_zone->max_lifetime);
-        // FILE *fp = fopen("zenfs.out", "a");
-        // fprintf(fp, "min_lifetime=%ld max_lifetime=%ld\n",
-        // allocated_zone->min_lifetime, allocated_zone->max_lifetime);
-        // fclose(fp);
         new_zone = true;
       } else {
-        // FILE *fp = fopen("zenfs.out", "a");
-        // fprintf(fp, "allocated_zone==nullptr and fail to allocate new zone");
-        // fclose(fp);
         PutActiveIOZoneToken();
       }
     }
