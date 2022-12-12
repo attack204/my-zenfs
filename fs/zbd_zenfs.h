@@ -41,8 +41,9 @@ const bool MYMODE = true;
 const int T = 200;
 const uint64_t GC_START_LEVEL = 40;                      /* Enable GC when < 20% free space available */
 const uint64_t GC_STOP_LEVEL = 50;
-const int ZoneNumber = 10;
 const int K = 1; //gc top k
+
+const int ZoneNumber = 32;
 
 
 
