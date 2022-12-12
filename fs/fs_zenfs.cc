@@ -292,7 +292,7 @@ uint64_t total_size = 0;
 uint64_t total_extents = 0;
 void ZenFS::MyGCWorker(const bool MODE) {
   uint32_t gc_times = 0;
-
+  uint32_t running = 0;
   while (run_gc_worker_) {
     usleep(SLEEP_TIME);
     uint64_t non_free = zbd_->GetUsedSpace() + zbd_->GetReclaimableSpace();
@@ -300,7 +300,13 @@ void ZenFS::MyGCWorker(const bool MODE) {
     uint64_t free_percent = (100 * free) / (free + non_free);
     ZenFSSnapshot snapshot;
     ZenFSSnapshotOptions options;
-    if (free_percent > GC_START_LEVEL) continue;
+    if(free_percent > GC_STOP_LEVEL) {
+      if(running) running = 0;
+      continue;
+    }
+    if (free_percent < GC_START_LEVEL && (!running)) {
+      running = 1;
+    }
     options.zone_ = 1;
     options.zone_file_ = 1;
     options.log_garbage_ = 1;
@@ -396,8 +402,8 @@ void ZenFS::MyGCWorker(const bool MODE) {
      // printf("] ");
       printf(
           "zone_size=%ld  "
-          "total_extents=%ld total_file_num=%ld total_size=%ld free=%ld" 
-          "drive_io=%ld rocks_io=%ld write_amp=%.2lf" 
+          "total_extents=%ld total_file_num=%ld total_size=%ld free=%ld " 
+          "drive_io=%ld rocks_io=%ld write_amp=%.2lf " 
           "reset_zone_num=%d migrate_exts=%ld migrate_file_num=%ld migrate_size=%ld\n",
           migrate_zones_start.size(), 
           total_extents, total_file_num, total_size, zbd_->GetFreeSpace(), 

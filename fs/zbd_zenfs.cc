@@ -49,6 +49,16 @@
 
 namespace ROCKSDB_NAMESPACE {
 
+static int cnt[5];
+void add_allocation(int flag, uint64_t lifetime, Zone *zone) {
+  cnt[flag]++;
+  printf("allocation_type=%d lifetime=%ld ", flag, lifetime);
+  if(zone != nullptr)
+    printf("zone_l=%ld zone_r=%ld ", zone->min_lifetime, zone->max_lifetime);
+  for(int i = 0; i < 4; i++) printf("type%d=%d ", i, cnt[i]);
+  printf("\n");
+}
+
 Zone::Zone(ZonedBlockDevice *zbd, ZonedBlockDeviceBackend *zbd_be,
            std::unique_ptr<ZoneList> &zones, unsigned int idx)
     : zbd_(zbd),
@@ -1041,12 +1051,20 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
     if (allocated_zone == nullptr) {  // try again, find the
       s = GetBestOpenZoneMatch(new_lifetime, file_lifetime, &best_diff,
                                &allocated_zone, 1);
+    } else {
+      add_allocation(0, new_lifetime, allocated_zone);
     }
     if (allocated_zone == nullptr) {  // try again, find the
       s = GetBestOpenZoneMatch(new_lifetime, file_lifetime, &best_diff,
                                &allocated_zone, 2);
+    } else {
+      add_allocation(1, new_lifetime, allocated_zone);
     }
-
+    if(allocated_zone != nullptr) {
+      add_allocation(2, new_lifetime, allocated_zone);
+    } else {
+      add_allocation(3, new_lifetime, nullptr);
+    }
   } else {
     s = GetBestOpenZoneMatch(file_lifetime, &best_diff, &allocated_zone, 0);
   }
