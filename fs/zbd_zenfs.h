@@ -40,7 +40,7 @@ const bool MYMODE = true;
 //false: use threshold algorithm
 const int T = 500;
 const uint64_t GC_START_LEVEL = 40;                      /* Enable GC when < 20% free space available */
-const uint64_t GC_STOP_LEVEL = 50;
+const uint64_t GC_STOP_LEVEL = 80;
 const int K = 1; //gc top k
 
 const int ZoneNumber = 32;
