@@ -18,7 +18,10 @@
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <unistd.h>
-
+#include <execinfo.h>
+#include <stdio.h>
+#include <stdlib.h>
+ 
 #include <iostream>
 #include <string>
 #include <utility>
@@ -261,11 +264,24 @@ void ZoneFile::ClearExtents() {
   }
   extents_.clear();
 }
-
+void print_stacktrace()
+{
+    int size = 16;
+    void * array[16];
+    int stack_num = backtrace(array, size);
+    char ** stacktrace = backtrace_symbols(array, stack_num);
+    for (int i = 0; i < stack_num; ++i)
+    {
+        printf("%s\n", stacktrace[i]);
+    }
+    free(stacktrace);
+}
 IOStatus ZoneFile::CloseActiveZone() {
   IOStatus s = IOStatus::OK();
   if (active_zone_) {
     bool full = active_zone_->IsFull();
+    print_stacktrace();
+    printf("close_active_zone_id=%ld capacity=%ld\n", active_zone_->id, active_zone_->capacity_);
     s = active_zone_->Close();
     ReleaseActiveZone();
     if (!s.ok()) {
@@ -305,6 +321,8 @@ IOStatus ZoneFile::CloseWR() {
   s = PersistMetadata();
   if (!s.ok()) return s;
   ReleaseWRLock();
+  if(active_zone_ != nullptr)
+    printf("CloseWR zone_id=%ld predict_list_size=%ld extents_size=%ld\n", active_zone_->id, active_zone_->prediction_lifetime_list.size(), extents_.size());
   return CloseActiveZone();
 }
 
@@ -507,6 +525,7 @@ IOStatus ZoneFile::BufferedAppend(char* buffer, uint32_t data_size) {
     left -= extent_length;
 
     if (active_zone_->capacity_ == 0) {
+      printf("BufferAppend::active_zone_full zone_id=%ld predict_list_size=%ld extents_size=%ld\n", active_zone_->id, active_zone_->prediction_lifetime_list.size(), extents_.size());
       s = CloseActiveZone();
       if (!s.ok()) {
         return s;
@@ -565,6 +584,7 @@ IOStatus ZoneFile::SparseAppend(char* sparse_buffer, uint32_t data_size) {
     left -= extent_length;
 
     if (active_zone_->capacity_ == 0) {
+      printf("SparseAppend::active_zone_full zone_id=%ld predict_list_size=%ld extents_size=%ld\n", active_zone_->id, active_zone_->prediction_lifetime_list.size(), extents_.size());
       s = CloseActiveZone();
       if (!s.ok()) {
         return s;
@@ -593,9 +613,11 @@ IOStatus ZoneFile::Append(void* data, int data_size) {
   }
 
   while (left) {
+    printf("Append::before active_zone_id=%ld zone_capactiy=%ld left=%d file_id=%ld file_size=%ld\n", active_zone_->id, active_zone_->capacity_, left, file_id_, file_size_);
     if (active_zone_->capacity_ == 0) { //这个地方很重要，既然capacity = 0，肯定就要allocate new zone
+      
       PushExtent();
-
+      printf("Append::active_zone_full_zone_id=%ld predict_list_size=%ld extents_size=%ld\n", active_zone_->id, active_zone_->prediction_lifetime_list.size(), extents_.size());
       s = CloseActiveZone();
       if (!s.ok()) {
         return s;
@@ -604,7 +626,6 @@ IOStatus ZoneFile::Append(void* data, int data_size) {
       s = AllocateNewZone();
       if (!s.ok()) return s;
     }
-
     wr_size = left;
     if (wr_size > active_zone_->capacity_) wr_size = active_zone_->capacity_;
 
@@ -613,6 +634,7 @@ IOStatus ZoneFile::Append(void* data, int data_size) {
 
     file_size_ += wr_size;
     left -= wr_size;
+    printf("Append::after active_zone_id=%ld zone_capacity=%ld left=%d file_id=%ld file_size=%ld\n", active_zone_->id, active_zone_->capacity_, left, file_id_, file_size_);
     offset += wr_size;
   }
 

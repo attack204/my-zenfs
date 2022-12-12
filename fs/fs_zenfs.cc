@@ -329,19 +329,21 @@ void ZenFS::MyGCWorker(const bool MODE) {
 
     // uint64_t greedy_zone_id = 0;
     std::vector<uint64_t> greedy_zone_id;
+    std::vector<uint64_t> used_cap;
     uint64_t migrate_file_num = 0;
     uint64_t migrate_size = 0;
     std::vector<std::vector<uint64_t> > lifetime_list_v;
     std::vector<std::vector<uint64_t> > prediction_lifetime_list_v;
+    printf(
+    "GC Work Start threshold=%ld free_percent=%ld  free=%ld non_free=%ld "
+    "GC_START_LEVEL=%ld\n",
+    threshold, free_percent, free, non_free, GC_START_LEVEL);
     uint64_t tot = 0;
     for (const auto& zone : snapshot.zones_) {
       std::vector<uint64_t>& file_list = zone_file_list[zone.start];
       std::vector<std::shared_ptr<ZoneFile>>& file_list_all =
           zone_file_list_all[zone.start];
-      printf(
-          "GC Work Start threshold=%ld free_percent=%ld  free=%ld non_free=%ld "
-          "GC_START_LEVEL=%ld\n",
-          threshold, free_percent, free, non_free, GC_START_LEVEL);
+
       if (zone.capacity == 0 &&
           ((MODE == false) || (MODE == true && zone.min_lifetime != 0))) {
         printf(
@@ -373,7 +375,7 @@ void ZenFS::MyGCWorker(const bool MODE) {
         // }
         zone_file_list[zone.start].clear();
         zone_file_list_all[zone.start].clear();
-
+        used_cap.emplace_back(zone.used_capacity);
         greedy_zone_id.emplace_back(zone.id);
         lifetime_list_v.emplace_back(zone.lifetime_list);
         prediction_lifetime_list_v.emplace_back(zone.prediction_lifetime_list);
@@ -418,9 +420,9 @@ void ZenFS::MyGCWorker(const bool MODE) {
         std::sort(prediction_lifetime_list.begin(), prediction_lifetime_list.end());
         if (!lifetime_list.empty()) {
           printf(
-              "Zone_id=%ld Real Lifetime_list size=%ld: min_lifetime=%ld "
-              "max_lifetime=%ld diff=%ld [",
-              greedy_zone_id[i], lifetime_list.size(), lifetime_list[0],
+              "Zone_id=%ld Real_list size=%ld used_cap=%ld min_deleted_time=%ld "
+              "max_deleted_time=%ld diff=%ld [",
+              greedy_zone_id[i], lifetime_list.size(), used_cap[i], lifetime_list[0],
               lifetime_list[lifetime_list.size() - 1],
               lifetime_list[lifetime_list.size() - 1] - lifetime_list[0]);
           for (auto& x : lifetime_list) {
@@ -433,9 +435,9 @@ void ZenFS::MyGCWorker(const bool MODE) {
         }
         if (!prediction_lifetime_list.empty()) {
           printf(
-              "Zone_id=%ld Prediction Lifetime_list size=%ld: min_lifetime=%ld "
+              "Zone_id=%ld Pred_list size=%ld used_cap=%ld min_lifetime=%ld "
               "max_lifetime=%ld diff=%ld [",
-              greedy_zone_id[i], prediction_lifetime_list.size(),
+              greedy_zone_id[i], prediction_lifetime_list.size(), used_cap[i],
               prediction_lifetime_list[0],
               prediction_lifetime_list[prediction_lifetime_list.size() - 1],
               prediction_lifetime_list[prediction_lifetime_list.size() - 1] -

@@ -50,7 +50,6 @@ class ZoneSnapshot {
   uint64_t capacity;
   uint64_t used_capacity;
   uint64_t max_capacity;
-
   uint64_t id;
   uint64_t min_lifetime;
   uint64_t max_lifetime;

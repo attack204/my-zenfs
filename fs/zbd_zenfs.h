@@ -39,7 +39,7 @@ const bool MYMODE = true;
 //true: use greedy algorithm
 //false: use threshold algorithm
 const int T = 200;
-const int K = 10; //gc top k
+const int K = 20; //gc top k
 
 
 
