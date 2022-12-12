@@ -307,6 +307,7 @@ void ZenFS::MyGCWorker(const bool MODE) {
     if (free_percent < GC_START_LEVEL && (!running)) {
       running = 1;
     }
+    if(!running) continue;
     options.zone_ = 1;
     options.zone_file_ = 1;
     options.log_garbage_ = 1;

@@ -463,11 +463,7 @@ IOStatus ZoneFile::AllocateNewZone() {
     max_global_clock = std::max(max_global_clock, new_lifetime);
   }
   
-  //if(MYMODE == true) {
     s = zbd_->AllocateIOZone(lifetime_, io_type_, &zone, new_lifetime); //my_allocate_alogortihm
-  // } else {
-  //   s = zbd_->AllocateIOZone(lifetime_, io_type_, &zone);
-  // }
   if (!s.ok()) return s;
   if (!zone) {
     return IOStatus::NoSpace("Zone allocation failure\n");
