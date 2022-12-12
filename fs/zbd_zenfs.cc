@@ -54,7 +54,7 @@ void add_allocation(int flag, uint64_t lifetime, Zone *zone) {
   cnt[flag]++;
   printf("allocation_type=%d lifetime=%ld ", flag, lifetime);
   if(zone != nullptr)
-    printf("zone_l=%ld zone_r=%ld ", zone->min_lifetime, zone->max_lifetime);
+    printf("zone_id=%ld zone_l=%ld zone_r=%ld ", zone->id, zone->min_lifetime, zone->max_lifetime);
   for(int i = 0; i < 4; i++) printf("type%d=%d ", i, cnt[i]);
   printf("\n");
 }
@@ -1125,6 +1125,7 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
         if (new_lifetime > MAX) new_lifetime = 0;
         allocated_zone->min_lifetime = new_lifetime;
         allocated_zone->max_lifetime = new_lifetime + T;
+        printf("allocated_new_zone znoe_id=%ld l=%ld r=%ld\n", allocated_zone->id, allocated_zone->min_lifetime, allocated_zone->max_lifetime);
         // FILE *fp = fopen("zenfs.out", "a");
         // fprintf(fp, "min_lifetime=%ld max_lifetime=%ld\n",
         // allocated_zone->min_lifetime, allocated_zone->max_lifetime);
