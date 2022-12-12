@@ -1051,19 +1051,20 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
     if (allocated_zone == nullptr) {  // try again, find the
       s = GetBestOpenZoneMatch(new_lifetime, file_lifetime, &best_diff,
                                &allocated_zone, 1);
+    
+      if (allocated_zone == nullptr) {  // try again, find the
+        s = GetBestOpenZoneMatch(new_lifetime, file_lifetime, &best_diff,
+                                &allocated_zone, 2);
+        if(allocated_zone != nullptr) {
+          add_allocation(2, new_lifetime, allocated_zone);
+        } else {
+          add_allocation(3, new_lifetime, nullptr);
+        }
+      } else {
+        add_allocation(1, new_lifetime, allocated_zone);
+      }
     } else {
       add_allocation(0, new_lifetime, allocated_zone);
-    }
-    if (allocated_zone == nullptr) {  // try again, find the
-      s = GetBestOpenZoneMatch(new_lifetime, file_lifetime, &best_diff,
-                               &allocated_zone, 2);
-    } else {
-      add_allocation(1, new_lifetime, allocated_zone);
-    }
-    if(allocated_zone != nullptr) {
-      add_allocation(2, new_lifetime, allocated_zone);
-    } else {
-      add_allocation(3, new_lifetime, nullptr);
     }
   } else {
     s = GetBestOpenZoneMatch(file_lifetime, &best_diff, &allocated_zone, 0);
