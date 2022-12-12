@@ -479,6 +479,7 @@ IOStatus ZonedBlockDevice::ResetUnusedIOZones() {
       }
     }
   }
+  printf("ResetUnusedIOZones reset_zone_num=%d\n", reset_zone_num);
   return IOStatus::OK();
 }
 

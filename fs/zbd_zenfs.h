@@ -58,7 +58,7 @@ const int ZoneNumber = 32;
 //don't need to modify
 
 const bool MYALGO = true;
-const bool DISABLE_RESET = true;
+const bool DISABLE_RESET = false;
 extern int reset_zone_num;
 
 
