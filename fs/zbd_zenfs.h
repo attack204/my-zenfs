@@ -38,7 +38,7 @@ const int INF = 1e9;
 const bool MYMODE = true;
 //true: use greedy algorithm
 //false: use threshold algorithm
-const int T = 200;
+const int T = 500;
 const uint64_t GC_START_LEVEL = 40;                      /* Enable GC when < 20% free space available */
 const uint64_t GC_STOP_LEVEL = 50;
 const int K = 1; //gc top k
