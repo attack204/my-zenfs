@@ -58,6 +58,15 @@ void add_allocation(int flag, uint64_t lifetime, Zone *zone) {
   for(int i = 0; i < 4; i++) printf("type%d=%d ", i, cnt[i]);
   printf("\n");
 }
+void add_allocation_off(int flag, Env::WriteLifeTimeHint lifetime, Zone *zone) {
+  cnt[flag]++;
+  printf("allocation_type=%d lifetime=%d ", flag, lifetime);
+  if(zone != nullptr)
+    printf("zone_id=%ld zone_l=%ld zone_r=%ld ", zone->id, zone->min_lifetime, zone->max_lifetime);
+  for(int i = 0; i < 4; i++) printf("type%d=%d ", i, cnt[i]);
+  printf("\n");
+}
+
 
 Zone::Zone(ZonedBlockDevice *zbd, ZonedBlockDeviceBackend *zbd_be,
            std::unique_ptr<ZoneList> &zones, unsigned int idx)
@@ -1050,8 +1059,6 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
                                 &allocated_zone, 2);
         if(allocated_zone != nullptr) {
           add_allocation(2, new_lifetime, allocated_zone);
-        } else {
-          add_allocation(3, new_lifetime, nullptr);
         }
       } else {
         add_allocation(1, new_lifetime, allocated_zone);
@@ -1061,14 +1068,15 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
     }
   } else {
     s = GetBestOpenZoneMatch(file_lifetime, &best_diff, &allocated_zone, 0);
+    if(allocated_zone != nullptr) {
+       add_allocation_off(0, file_lifetime, allocated_zone);
+    }
   }
 
   if (!s.ok()) {
     PutOpenIOZoneToken();
     return s;
   }
-
-  // Holding allocated_zone if != nullptr
 
   if (best_diff >= LIFETIME_DIFF_COULD_BE_WORSE) {
     bool got_token = GetActiveIOZoneTokenIfAvailable();
@@ -1105,6 +1113,7 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
       }
 
       s = AllocateEmptyZone(&allocated_zone);
+      add_allocation_off(3, file_lifetime, nullptr);
       if (!s.ok()) {
         PutActiveIOZoneToken();
         PutOpenIOZoneToken();

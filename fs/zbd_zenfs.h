@@ -31,10 +31,10 @@
 #include "rocksdb/io_status.h"
 
 namespace ROCKSDB_NAMESPACE {
+const int INF = 1e9;
 
 //true: use my algorithm
 //false: use default algorithm
-const int INF = 1e9;
 const bool MYMODE = true;
 //true: use greedy algorithm
 //false: use threshold algorithm
@@ -42,23 +42,13 @@ const int T = 500;
 const uint64_t GC_START_LEVEL = 40;                      /* Enable GC when < 20% free space available */
 const uint64_t GC_STOP_LEVEL = 80;
 const int K = 1; //gc top k
+const bool DISABLE_RESET = true;
+
 
 const int ZoneNumber = 32;
-
-
-
-
-
-
-
-
-
-
-
 //don't need to modify
 
 const bool MYALGO = true;
-const bool DISABLE_RESET = false;
 extern int reset_zone_num;
 
 
