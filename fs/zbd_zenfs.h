@@ -35,19 +35,24 @@ const int INF = 1e9;
 
 //true: use my algorithm
 //false: use default algorithm
-const bool MYMODE = true;
-//true: use greedy algorithm
-//false: use threshold algorithm
+const bool MYMODE = true; 
+const int MAX_DIFFTIME = 1e9; //ALGO 2 3
 const int T = 500;
-const uint64_t GC_START_LEVEL = 40;                      /* Enable GC when < 20% free space available */
-const uint64_t GC_STOP_LEVEL = 80;
-const int K = 1; //gc top k
-const bool DISABLE_RESET = true;
+const int K = 2; //gc top k
 
+//Test wp
+const uint64_t GC_START_LEVEL = 80;                      /* Enable GC when < 20% free space available */
+const uint64_t GC_STOP_LEVEL = 90;
+const bool DISABLE_RESET = false;
+
+
+// Test space waste
+// const uint64_t GC_START_LEVEL = 0;                      /* Enable GC when < 20% free space available */
+// const uint64_t GC_STOP_LEVEL = 100;
+// const bool DISABLE_RESET = true;
 
 const int ZoneNumber = 32;
 //don't need to modify
-
 const bool MYALGO = true;
 extern int reset_zone_num;
 

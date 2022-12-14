@@ -766,7 +766,6 @@ IOStatus ZonedBlockDevice::GetBestOpenZoneMatch(
             "min_lifetime=%ld max_lifetime=%ld global_clock=%d\n",
             z->id, new_lifetime_, z->min_lifetime, z->max_lifetime,
             global_clock);
-        const int MAX_DIFFTIME = 1e9;
         if( (flag == 0 && (new_lifetime_ >= z->min_lifetime) && (new_lifetime_ <= z->max_lifetime)) ||
             (flag == 1 && (new_lifetime_  < z->min_lifetime) && (z->min_lifetime - new_lifetime_ < mx)) || 
             (flag == 2 && (new_lifetime_  > z->max_lifetime) && (new_lifetime_ - z->max_lifetime < mx) && (new_lifetime_ - z->max_lifetime <= MAX_DIFFTIME)))
