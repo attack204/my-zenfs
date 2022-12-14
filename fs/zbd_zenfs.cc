@@ -474,10 +474,12 @@ IOStatus ZonedBlockDevice::ResetUnusedIOZones() {
       // printf("Reset zone_id=%ld zone_start=%ld is_empty()=%d
       // used_capacity=%ld\n", z->id, z->start_, z->IsEmpty(),
       // z->used_capacity_.load());
-      if (!z->IsEmpty() && !z->IsUsed()) {  // zone is empty
+      if (!z->IsEmpty() && !z->IsUsed()) {  // used = 0
         bool full = z->IsFull();
         IOStatus reset_status = z->Reset();
         reset_zone_num++;
+        z->prediction_lifetime_list.clear();
+        z->lifetime_list.clear();
         IOStatus release_status = z->CheckRelease();
         if (!reset_status.ok()) return reset_status;
         if (!release_status.ok()) return release_status;
@@ -502,6 +504,8 @@ IOStatus ZonedBlockDevice::MyResetUnusedIOZones() {
         bool full = z->IsFull();
         IOStatus reset_status = z->Reset();
         reset_zone_num++;
+        z->prediction_lifetime_list.clear();
+        z->lifetime_list.clear();
         IOStatus release_status = z->CheckRelease();
         if (!reset_status.ok()) return reset_status;
         if (!release_status.ok()) return release_status;
@@ -521,6 +525,9 @@ IOStatus ZonedBlockDevice::ResetTartetUnusedIOZones(uint64_t id) {
       if (!z->IsEmpty() && !z->IsUsed() && z->id == id) {
         bool full = z->IsFull();
         IOStatus reset_status = z->Reset();
+        z->prediction_lifetime_list.clear();
+        z->lifetime_list.clear();
+        reset_zone_num++;
         IOStatus release_status = z->CheckRelease();
         if (!reset_status.ok()) return reset_status;
         if (!release_status.ok()) return release_status;

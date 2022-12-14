@@ -285,7 +285,7 @@ ZenFS::~ZenFS() {
 }
 
 const int SLEEP_TIME = 1000 * 1000;
-
+const int MB = 1024ll / 1024ll;
 int reset_zone_num = 0;
 uint64_t total_file_num = 0;
 uint64_t total_size = 0;
@@ -340,6 +340,7 @@ void ZenFS::MyGCWorker(const bool MODE) {
     "GC_START_LEVEL=%ld\n",
     threshold, free_percent, free, non_free, GC_START_LEVEL);
     uint64_t tot = 0;
+
     for (const auto& zone : snapshot.zones_) {
       std::vector<uint64_t>& file_list = zone_file_list[zone.start];
       std::vector<std::shared_ptr<ZoneFile>>& file_list_all =
@@ -351,13 +352,24 @@ void ZenFS::MyGCWorker(const bool MODE) {
             "zone: zone_start=%ld zone_id=%ld L=%ld R=%ld capacity=%ld "
             "used_capacity=%ld max_capacity=%ld file_list_size=%ld\n",
             zone.start, zone.id, zone.min_lifetime, zone.max_lifetime,
-            zone.capacity, zone.used_capacity, zone.max_capacity,
+            zone.capacity / MB, zone.used_capacity / MB, zone.max_capacity / MB,
             file_list.size());
-        for (auto& x : file_list_all) {
-          ZoneFile& file = *x;
-          printf("file_id=%ld lifetime=%ld\n", file.GetID(), file.new_lifetime);
-        }
-        puts("");
+        // for (auto& x : file_list_all) {
+        //   ZoneFile& file = *x;
+        //   printf("file_id=%ld lifetime=%ld\n", file.GetID(), file.new_lifetime);
+        // }
+        // puts("");
+      }
+    }
+
+
+    for (const auto& zone : snapshot.zones_) {
+      std::vector<uint64_t>& file_list = zone_file_list[zone.start];
+      std::vector<std::shared_ptr<ZoneFile>>& file_list_all =
+          zone_file_list_all[zone.start];
+
+      if (zone.capacity == 0 &&
+          ((MODE == false) || (MODE == true && zone.min_lifetime != 0))) {
 
         migrate_zones_start.emplace(zone.start);
         migrate_size += zone.used_capacity;
@@ -376,13 +388,10 @@ void ZenFS::MyGCWorker(const bool MODE) {
         // }
         zone_file_list[zone.start].clear();
         zone_file_list_all[zone.start].clear();
-        used_cap.emplace_back(zone.used_capacity);
+        used_cap.emplace_back(zone.used_capacity / MB);
         greedy_zone_id.emplace_back(zone.id);
         lifetime_list_v.emplace_back(zone.lifetime_list);
         prediction_lifetime_list_v.emplace_back(zone.prediction_lifetime_list);
-
-
-     
         tot++;
         if (MYALGO == true && tot == K) break;
       }
@@ -409,9 +418,9 @@ void ZenFS::MyGCWorker(const bool MODE) {
           "drive_io=%ld rocks_io=%ld write_amp=%.2lf " 
           "reset_zone_num=%d migrate_exts=%ld migrate_file_num=%ld migrate_size=%ld\n",
           migrate_zones_start.size(), 
-          total_extents, total_file_num, total_size, zbd_->GetFreeSpace(), 
+          total_extents, total_file_num, total_size / MB, zbd_->GetFreeSpace(), 
           write_size_calc, GetIOSTATS(), 1.0 * write_size_calc / GetIOSTATS(), 
-          reset_zone_num, migrate_exts.size(), migrate_file_num, migrate_size);
+          reset_zone_num, migrate_exts.size(), migrate_file_num, migrate_size / MB);
 
 
       for(uint64_t i = 0; i < greedy_zone_id.size(); i++) {
@@ -421,9 +430,9 @@ void ZenFS::MyGCWorker(const bool MODE) {
         std::sort(prediction_lifetime_list.begin(), prediction_lifetime_list.end());
         if (!lifetime_list.empty()) {
           printf(
-              "Zone_id=%ld Real_list size=%ld used_cap=%ld min_deleted_time=%ld "
-              "max_deleted_time=%ld diff=%ld [",
-              greedy_zone_id[i], lifetime_list.size(), used_cap[i], lifetime_list[0],
+              "zone_id=%ld Real_list size=%ld used=%ld min_time=%ld "
+              "max_time=%ld diff=%ld hint=%d [",
+              greedy_zone_id[i], lifetime_list.size(), used_cap[i] / MB, lifetime_list[0],
               lifetime_list[lifetime_list.size() - 1],
               lifetime_list[lifetime_list.size() - 1] - lifetime_list[0]);
           for (auto& x : lifetime_list) {
@@ -438,7 +447,7 @@ void ZenFS::MyGCWorker(const bool MODE) {
           printf(
               "Zone_id=%ld Pred_list size=%ld used_cap=%ld min_lifetime=%ld "
               "max_lifetime=%ld diff=%ld [",
-              greedy_zone_id[i], prediction_lifetime_list.size(), used_cap[i],
+              greedy_zone_id[i], prediction_lifetime_list.size(), used_cap[i] / MB,
               prediction_lifetime_list[0],
               prediction_lifetime_list[prediction_lifetime_list.size() - 1],
               prediction_lifetime_list[prediction_lifetime_list.size() - 1] -
