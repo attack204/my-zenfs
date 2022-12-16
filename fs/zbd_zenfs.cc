@@ -471,9 +471,8 @@ IOStatus ZonedBlockDevice::ResetUnusedIOZones() {
   if (DISABLE_RESET == true) return IOStatus::OK();
   for (const auto z : io_zones) {
     if (z->Acquire()) {
-         printf("Reset zone_id=%ld zone_start=%ld is_empty()=%d
-       used_capacity=%ld\n", z->id, z->start_, z->IsEmpty(),
-         z->used_capacity_.load());
+       printf("Reset zone_id=%ld zone_start=%ld is_empty()=%d used_capacity=%ld\n", 
+       z->id, z->start_, z->IsEmpty(), z->used_capacity_.load());
       if (!z->IsEmpty() && !z->IsUsed()) {  // used = 0
         bool full = z->IsFull();
         IOStatus reset_status = z->Reset();
@@ -496,9 +495,8 @@ IOStatus ZonedBlockDevice::ResetUnusedIOZones() {
 IOStatus ZonedBlockDevice::MyResetUnusedIOZones() {
   for (const auto z : io_zones) {
     if (z->Acquire()) {
-       printf("Reset zone_id=%ld zone_start=%ld is_empty()=%d
-       used_capacity=%ld\n", z->id, z->start_, z->IsEmpty(),
-         z->used_capacity_.load());
+       printf("Reset zone_id=%ld zone_start=%ld is_empty()=%d used_capacity=%ld\n", 
+       z->id, z->start_, z->IsEmpty(), z->used_capacity_.load());
       if (!z->IsEmpty() && !z->IsUsed()) {  // zone is empty
         bool full = z->IsFull();
         IOStatus reset_status = z->Reset();
@@ -522,9 +520,8 @@ IOStatus ZonedBlockDevice::ResetTartetUnusedIOZones(uint64_t id) {
   for (const auto z : io_zones) {
     if (z->Acquire()) {
       if (!z->IsEmpty() && !z->IsUsed() && z->id == id) {
-            printf("Reset zone_id=%ld zone_start=%ld is_empty()=%d
-       used_capacity=%ld\n", z->id, z->start_, z->IsEmpty(),
-         z->used_capacity_.load());
+       printf("Reset zone_id=%ld zone_start=%ld is_empty()=%d used_capacity=%ld\n", 
+       z->id, z->start_, z->IsEmpty(), z->used_capacity_.load());
         bool full = z->IsFull();
         IOStatus reset_status = z->Reset();
         z->prediction_lifetime_list.clear();
