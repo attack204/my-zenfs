@@ -288,7 +288,7 @@ ZenFS::~ZenFS() {
 }
 
 const int SLEEP_TIME = 1000 * 1000;
-const int MB = 1024ll * 1024ll;
+const int MB = 1024 * 1024;
 int reset_zone_num = 0;
 uint64_t total_file_num = 0;
 uint64_t total_size = 0;
@@ -336,10 +336,13 @@ void ZenFS::MyGCWorker(const bool MODE) {
     // uint64_t greedy_zone_id = 0;
     std::vector<uint64_t> greedy_zone_id;
     std::vector<uint64_t> used_cap;
+    std::vector<int> hint_list;
     uint64_t migrate_file_num = 0;
     uint64_t migrate_size = 0;
     std::vector<std::vector<uint64_t> > lifetime_list_v;
     std::vector<std::vector<uint64_t> > prediction_lifetime_list_v;
+    std::vector<std::map<int, int> > hint_num_v;
+
     printf(
     "GC Work Start threshold=%ld free_percent=%ld  free=%ld non_free=%ld "
     "GC_START_LEVEL=%ld\n",
@@ -348,8 +351,7 @@ void ZenFS::MyGCWorker(const bool MODE) {
 
     for (const auto& zone : snapshot.zones_) {
       std::vector<uint64_t>& file_list = zone_file_list[zone.start];
-      std::vector<std::shared_ptr<ZoneFile>>& file_list_all =
-          zone_file_list_all[zone.start];
+     // std::vector<std::shared_ptr<ZoneFile>>& file_list_all = zone_file_list_all[zone.start];
 
       if (zone.capacity == 0 &&
           ((MODE == false) || (MODE == true && zone.min_lifetime != 0))) {
@@ -370,8 +372,7 @@ void ZenFS::MyGCWorker(const bool MODE) {
 
     for (const auto& zone : snapshot.zones_) {
       std::vector<uint64_t>& file_list = zone_file_list[zone.start];
-      std::vector<std::shared_ptr<ZoneFile>>& file_list_all =
-          zone_file_list_all[zone.start];
+     // std::vector<std::shared_ptr<ZoneFile>>& file_list_all = zone_file_list_all[zone.start];
 
       if (zone.capacity == 0 &&
           ((MODE == false) || (MODE == true && zone.min_lifetime != 0))) {
@@ -396,6 +397,8 @@ void ZenFS::MyGCWorker(const bool MODE) {
         used_cap.emplace_back(zone.used_capacity / MB);
         greedy_zone_id.emplace_back(zone.id);
         lifetime_list_v.emplace_back(zone.lifetime_list);
+        hint_list.emplace_back(zone.lifetime_);
+        hint_num_v.emplace_back(zone.hint_num);
         prediction_lifetime_list_v.emplace_back(zone.prediction_lifetime_list);
         tot++;
         if (MYALGO == true && tot == K) break;
@@ -431,40 +434,52 @@ void ZenFS::MyGCWorker(const bool MODE) {
       for(uint64_t i = 0; i < greedy_zone_id.size(); i++) {
         auto &lifetime_list = lifetime_list_v[i];
         auto &prediction_lifetime_list = prediction_lifetime_list_v[i];
+        auto &hint_num = hint_num_v[i];
         std::sort(lifetime_list.begin(), lifetime_list.end());
         std::sort(prediction_lifetime_list.begin(), prediction_lifetime_list.end());
+
         if (!lifetime_list.empty()) {
           printf(
-              "zone_id=%ld Real_list size=%ld used=%ld min_time=%ld "
-              "max_time=%ld diff=%ld hint=%d [",
-              greedy_zone_id[i], lifetime_list.size(), used_cap[i] / MB, lifetime_list[0],
-              lifetime_list[lifetime_list.size() - 1],
-              lifetime_list[lifetime_list.size() - 1] - lifetime_list[0]);
+              "zone_id=%ld diff=%ld HINT=%d Real_list size=%ld used=%ld min_time=%ld "
+              "max_time=%ld [",
+              greedy_zone_id[i], lifetime_list[lifetime_list.size() - 1] - lifetime_list[0], hint_list[i],
+              lifetime_list.size(), used_cap[i], lifetime_list[0],
+              lifetime_list[lifetime_list.size() - 1]);
           for (auto& x : lifetime_list) {
             printf("%ld ", x);
           }
           printf("]\n");
-          lifetime_list.clear();
         } else {
           printf("ERROR: lifetime_list is empty\n");
         }
-        if (!prediction_lifetime_list.empty()) {
-          printf(
-              "Zone_id=%ld Pred_list size=%ld used_cap=%ld min_lifetime=%ld "
-              "max_lifetime=%ld diff=%ld [",
-              greedy_zone_id[i], prediction_lifetime_list.size(), used_cap[i] / MB,
-              prediction_lifetime_list[0],
-              prediction_lifetime_list[prediction_lifetime_list.size() - 1],
-              prediction_lifetime_list[prediction_lifetime_list.size() - 1] -
-                  prediction_lifetime_list[0]);
-          for (auto& x : prediction_lifetime_list) {
-            printf("%ld ", x);
+
+        if(MYMODE == true) {
+          if (!prediction_lifetime_list.empty()) {
+            printf(
+                "Zone_id=%ld diff=%ld HINT=%d Pred_list size=%ld used=%ld min_lifetime=%ld "
+                "max_lifetime=%ld[",
+                greedy_zone_id[i], prediction_lifetime_list[prediction_lifetime_list.size() - 1] -
+                    prediction_lifetime_list[0], hint_list[i], prediction_lifetime_list.size(), used_cap[i],
+                prediction_lifetime_list[0],
+                prediction_lifetime_list[prediction_lifetime_list.size() - 1]);
+            for (auto& x : prediction_lifetime_list) {
+              printf("%ld ", x);
+            }
+            printf("]\n");
+          } else {
+            printf("ERROR: lifetime_list is empty\n");
           }
-          printf("]\n");
-          prediction_lifetime_list.clear();
         } else {
-          printf("ERROR: lifetime_list is empty\n");
+            printf(
+                "Zone_id=%ld diff=%ld HINT=%d Pred_list size=%ld used=%ld\n",
+                greedy_zone_id[i], prediction_lifetime_list[prediction_lifetime_list.size() - 1] -
+                    prediction_lifetime_list[0], hint_list[i], prediction_lifetime_list.size(), used_cap[i]);
+            for (auto& x : hint_num) {
+              printf("key=%d value=%d\n", x.first, x.second);
+            }
         }
+
+
       }
         
 

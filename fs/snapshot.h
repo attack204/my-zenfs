@@ -55,7 +55,8 @@ class ZoneSnapshot {
   uint64_t max_lifetime;
   std::vector<uint64_t> lifetime_list;
   std::vector<uint64_t> prediction_lifetime_list;
-
+  int lifetime_;
+  std::map<int, int> hint_num;
  public:
   ZoneSnapshot(const Zone& zone)
       : start(zone.start_),
@@ -67,7 +68,9 @@ class ZoneSnapshot {
         min_lifetime(zone.min_lifetime),
         max_lifetime(zone.max_lifetime), 
         lifetime_list(zone.lifetime_list),
-        prediction_lifetime_list(zone.prediction_lifetime_list)
+        prediction_lifetime_list(zone.prediction_lifetime_list),
+        lifetime_(zone.lifetime_),
+        hint_num(zone.hint_num)
         {}
 };
 

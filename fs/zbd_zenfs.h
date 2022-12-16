@@ -35,7 +35,7 @@ const int INF = 1e9;
 
 //true: use my algorithm
 //false: use default algorithm
-const bool MYMODE = true; 
+const bool MYMODE = false; 
 const int MAX_DIFFTIME = 200; //ALGO 2 3
 const int T = 800;
 const int K = 2; //gc top k
@@ -95,6 +95,7 @@ class Zone {
   std::vector<uint64_t> files_id;
   std::vector<uint64_t> lifetime_list;
   std::vector<uint64_t> prediction_lifetime_list;
+  std::map<int, int> hint_num;
 
   IOStatus Reset();
   IOStatus Finish();

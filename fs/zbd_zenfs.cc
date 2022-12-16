@@ -479,6 +479,7 @@ IOStatus ZonedBlockDevice::ResetUnusedIOZones() {
         reset_zone_num++;
         z->prediction_lifetime_list.clear();
         z->lifetime_list.clear();
+        z->hint_num.clear();
         IOStatus release_status = z->CheckRelease();
         if (!reset_status.ok()) return reset_status;
         if (!release_status.ok()) return release_status;
@@ -503,6 +504,7 @@ IOStatus ZonedBlockDevice::MyResetUnusedIOZones() {
         reset_zone_num++;
         z->prediction_lifetime_list.clear();
         z->lifetime_list.clear();
+        z->hint_num.clear();
         IOStatus release_status = z->CheckRelease();
         if (!reset_status.ok()) return reset_status;
         if (!release_status.ok()) return release_status;
@@ -526,6 +528,7 @@ IOStatus ZonedBlockDevice::ResetTartetUnusedIOZones(uint64_t id) {
         IOStatus reset_status = z->Reset();
         z->prediction_lifetime_list.clear();
         z->lifetime_list.clear();
+        z->hint_num.clear();
         reset_zone_num++;
         IOStatus release_status = z->CheckRelease();
         if (!reset_status.ok()) return reset_status;
@@ -1075,6 +1078,7 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
     s = GetBestOpenZoneMatch(file_lifetime, &best_diff, &allocated_zone, 0);
     if(allocated_zone != nullptr) {
        add_allocation_off(0, file_lifetime, allocated_zone);
+       allocated_zone->hint_num[file_lifetime]++;
     }
   }
 
@@ -1119,6 +1123,7 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
 
       s = AllocateEmptyZone(&allocated_zone);
       add_allocation_off(3, file_lifetime, nullptr);
+      allocated_zone->hint_num[file_lifetime]++;
       if (!s.ok()) {
         PutActiveIOZoneToken();
         PutOpenIOZoneToken();
