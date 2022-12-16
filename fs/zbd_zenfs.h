@@ -41,13 +41,13 @@ const int T = 500;
 const int K = 2; //gc top k
 
 //Test wp
-const uint64_t GC_START_LEVEL = 80;                      /* Enable GC when < 20% free space available */
+const uint64_t GC_START_LEVEL = 80;                   
 const uint64_t GC_STOP_LEVEL = 90;
 const bool DISABLE_RESET = false;
 
 
 // Test space waste
-// const uint64_t GC_START_LEVEL = 0;                      /* Enable GC when < 20% free space available */
+// const uint64_t GC_START_LEVEL = 0;              
 // const uint64_t GC_STOP_LEVEL = 100;
 // const bool DISABLE_RESET = true;
 

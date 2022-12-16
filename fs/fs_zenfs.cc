@@ -43,6 +43,9 @@ extern uint64_t GetIOSTATS();
 
 extern bool DoPreCompaction(std::vector<uint64_t> file_list);
 
+extern void set_write_amplification(double wp);
+extern void set_reset_num(int reset_num);
+
 uint64_t write_size_calc;
 
 Status Superblock::DecodeFrom(Slice* input) {
@@ -285,7 +288,7 @@ ZenFS::~ZenFS() {
 }
 
 const int SLEEP_TIME = 1000 * 1000;
-const int MB = 1024ll / 1024ll;
+const int MB = 1024ll * 1024ll;
 int reset_zone_num = 0;
 uint64_t total_file_num = 0;
 uint64_t total_size = 0;
@@ -294,6 +297,8 @@ void ZenFS::MyGCWorker(const bool MODE) {
   uint32_t gc_times = 0;
   uint32_t running = 0;
   while (run_gc_worker_) {
+    set_write_amplification(1.0 * write_size_calc / GetIOSTATS());
+    set_reset_num(reset_zone_num);
     usleep(SLEEP_TIME);
     uint64_t non_free = zbd_->GetUsedSpace() + zbd_->GetReclaimableSpace();
     uint64_t free = zbd_->GetFreeSpace();
