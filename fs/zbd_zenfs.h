@@ -36,8 +36,8 @@ const int INF = 1e9;
 //true: use my algorithm
 //false: use default algorithm
 const bool MYMODE = true; 
-const int MAX_DIFFTIME = 1e9; //ALGO 2 3
-const int T = 500;
+const int MAX_DIFFTIME = 200; //ALGO 2 3
+const int T = 800;
 const int K = 2; //gc top k
 
 //Test wp
