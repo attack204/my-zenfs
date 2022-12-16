@@ -45,6 +45,7 @@ extern bool DoPreCompaction(std::vector<uint64_t> file_list);
 
 extern void set_write_amplification(double wp);
 extern void set_reset_num(int reset_num);
+extern int get_clock();
 
 uint64_t write_size_calc;
 
@@ -417,7 +418,7 @@ void ZenFS::MyGCWorker(const bool MODE) {
       total_file_num += migrate_file_num;
       total_size += migrate_size;
       total_extents += migrate_exts.size();
-      printf("GC Begin %d ", ++gc_times);
+      printf("GC Begin %d clock=%d ", ++gc_times, get_clock());
      // for(auto &x: greedy_zone_id) printf("%ld ", x);
      // printf("] ");
       printf(
