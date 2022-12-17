@@ -35,11 +35,11 @@ const int INF = 1e9;
 
 //true: use my algorithm
 //false: use default algorithm
-const bool MYMODE = false; 
-const int MAX_DIFFTIME = 0; //ALGO 2 3
-const int T = 1500;
+const bool MYMODE = true; 
+const int MAX_DIFFTIME = 500; //ALGO 2 3
+const int T = 1600;
 const int CALC_RESET = 0;
-const int SHORT_THE = 4;
+const int SHORT_THE = 3;
 
 
 

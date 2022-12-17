@@ -1185,8 +1185,9 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
         if (new_lifetime > MAX) new_lifetime = 0;
         //allocated_zone->min_lifetime = std::max(static_cast<uint64_t>(0), new_lifetime - T);
         allocated_zone->lifetime_type = new_type;
-        if(new_lifetime < T)
-        allocated_zone->min_lifetime = (new_lifetime < T ? 1: new_lifetime - T);
+        //if(new_lifetime < T)
+        //allocated_zone->min_lifetime = (new_lifetime < T ? 1: new_lifetime - T);
+        allocated_zone->min_lifetime = new_lifetime;
         allocated_zone->max_lifetime = new_lifetime + T;
         printf("allocated_new_zone znoe_id=%ld l=%ld r=%ld\n", allocated_zone->id, allocated_zone->min_lifetime, allocated_zone->max_lifetime);
         new_zone = true;
