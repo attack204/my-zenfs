@@ -741,17 +741,18 @@ IOStatus ZonedBlockDevice::GetBestOpenZoneMatch(
   Zone *allocated_zone = nullptr;
   IOStatus s;
   uint64_t mx = INF;  // dis最小的zone
-
-
+  if(new_lifetime_ == 0) {
+    new_type = ((SHORT_THE == -1) ? 1 : 0);
+  }
   for (const auto z : io_zones) {
     if (z->Acquire()) {
       if ((z->used_capacity_ > 0) && !z->IsFull() &&
           z->capacity_ >= min_capacity) {
         printf(
-            "GetBestOpenZoneMatch zone_id=%ld new_lifetime_=%ld new_type=%d"
-            "min_lifetime=%ld max_lifetime=%ld zone_type=%d global_clock=%d\n",
+            "GetBestOpenZoneMatch zone_id=%ld new_lifetime_=%ld new_type=%d "
+            "min_lifetime=%ld max_lifetime=%ld zone_type=%d global_clock=%d flag=%d flag2=%d\n",
             z->id, new_lifetime_, new_type, z->min_lifetime, z->max_lifetime, z->lifetime_type,
-            global_clock);
+            global_clock, flag, flag2);
         //new_type: file type
         //lifetime_type: zone type;
         if( (new_type == 0 && z->lifetime_type == 0 && flag2 == 0) 
@@ -1095,8 +1096,8 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
   /* Try to fill an already open zone(with the best life time diff) */
   if (MYMODE == true) {
 
- //   s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
-  //                          &allocated_zone, 0, 0);
+    s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
+                           &allocated_zone, 0, 0);
     if(allocated_zone == nullptr) {
       s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
                               &allocated_zone, 0, 1);
@@ -1184,12 +1185,13 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
         allocated_zone->lifetime_ = file_lifetime;
         if (new_lifetime > MAX) new_lifetime = 0;
         //allocated_zone->min_lifetime = std::max(static_cast<uint64_t>(0), new_lifetime - T);
+        if(new_lifetime == 0) new_type = ((SHORT_THE == -1) ? 1 : 0);
         allocated_zone->lifetime_type = new_type;
         //if(new_lifetime < T)
         //allocated_zone->min_lifetime = (new_lifetime < T ? 1: new_lifetime - T);
         allocated_zone->min_lifetime = new_lifetime;
         allocated_zone->max_lifetime = new_lifetime + T;
-        printf("allocated_new_zone znoe_id=%ld l=%ld r=%ld\n", allocated_zone->id, allocated_zone->min_lifetime, allocated_zone->max_lifetime);
+        printf("allocated_new_zone znoe_id=%ld l=%ld r=%ld lifetime_type=%d \n", allocated_zone->id, allocated_zone->min_lifetime, allocated_zone->max_lifetime, new_type);
         new_zone = true;
         add_allocation_off(3, file_lifetime, allocated_zone);
         add_allocation(3, 3, file_lifetime, new_type, allocated_zone);
