@@ -50,6 +50,7 @@
 namespace ROCKSDB_NAMESPACE {
 
 static int cnt[5];
+static int cnt_zone_hint[6];
 void add_allocation(int flag, uint64_t lifetime, Zone *zone) {
   cnt[flag]++;
   printf("allocation_type=%d lifetime=%ld ", flag, lifetime);
@@ -65,6 +66,12 @@ void add_allocation_off(int flag, Env::WriteLifeTimeHint lifetime, Zone *zone) {
     printf("zone_id=%ld zone_l=%ld zone_r=%ld ", zone->id, zone->min_lifetime, zone->max_lifetime);
   for(int i = 0; i < 4; i++) printf("type%d=%d ", i, cnt[i]);
   printf("\n");
+  if(MYMODE == false && flag == 3) {
+    cnt_zone_hint[zone->lifetime_]++;
+    for(int i = 0; i < 6; i++) {
+      printf("zone_hint%d=%d\n", i, cnt_zone_hint[i]);
+    }
+  }
 }
 
 
@@ -1122,8 +1129,7 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
       }
 
       s = AllocateEmptyZone(&allocated_zone);
-      add_allocation_off(3, file_lifetime, nullptr);
-      allocated_zone->hint_num[file_lifetime]++;
+
       if (!s.ok()) {
         PutActiveIOZoneToken();
         PutOpenIOZoneToken();
@@ -1139,6 +1145,8 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
         allocated_zone->max_lifetime = new_lifetime + T;
         printf("allocated_new_zone znoe_id=%ld l=%ld r=%ld\n", allocated_zone->id, allocated_zone->min_lifetime, allocated_zone->max_lifetime);
         new_zone = true;
+        add_allocation_off(3, file_lifetime, allocated_zone);
+        allocated_zone->hint_num[file_lifetime]++;
       } else {
         PutActiveIOZoneToken();
       }
