@@ -325,17 +325,16 @@ void ZenFS::MyGCWorker(const bool MODE) {
 
     uint64_t threshold = (100 - GC_SLOPE * (GC_START_LEVEL - free_percent));
     std::set<uint64_t> migrate_zones_start;
-    if (MYALGO == true) {
-      sort(snapshot.zones_.begin(), snapshot.zones_.end(),
-           [](ZoneSnapshot& a, ZoneSnapshot& b) {
-             if (a.capacity == 0 && b.capacity == 0) {
-               return (100 - 100 * a.used_capacity / a.max_capacity) >
-                      (100 - 100 * b.used_capacity / b.max_capacity);
-             } else {
-               return a.capacity < b.capacity;
-             }
-           });
-    }
+
+    sort(snapshot.zones_.begin(), snapshot.zones_.end(),
+      [](ZoneSnapshot& a, ZoneSnapshot& b) {
+        if (a.capacity == 0 && b.capacity == 0) {
+          return (100 - 100 * a.used_capacity / a.max_capacity) >
+                (100 - 100 * b.used_capacity / b.max_capacity);
+        } else {
+          return a.capacity < b.capacity;
+        }
+      });
 
     // uint64_t greedy_zone_id = 0;
     std::vector<uint64_t> greedy_zone_id;
@@ -358,7 +357,8 @@ void ZenFS::MyGCWorker(const bool MODE) {
      // std::vector<std::shared_ptr<ZoneFile>>& file_list_all = zone_file_list_all[zone.start];
 
       if (zone.capacity == 0 &&
-          ((MODE == false) || (MODE == true && zone.min_lifetime != 0))) {
+         // ((MODE == false) || (MODE == true && zone.min_lifetime != 0))) {
+          ((MODE == false) || (MODE == true))) {
         printf(
             "zone: zone_start=%ld zone_id=%ld L=%ld R=%ld capacity=%ld "
             "used_capacity=%ld max_capacity=%ld file_list_size=%ld\n",
@@ -405,7 +405,7 @@ void ZenFS::MyGCWorker(const bool MODE) {
         hint_num_v.emplace_back(zone.hint_num);
         prediction_lifetime_list_v.emplace_back(zone.prediction_lifetime_list);
         tot++;
-        if (MYALGO == true && tot == K) break;
+        if (tot == K) break;
       }
     }
 
@@ -490,7 +490,7 @@ void ZenFS::MyGCWorker(const bool MODE) {
 
     }
 
-    if (MYALGO == true && migrate_exts.size() == 0 && greedy_zone_id.size() != 0) {
+    if (migrate_exts.size() == 0 && greedy_zone_id.size() != 0) {
       for(auto &x: greedy_zone_id) {
         IOStatus s;
         s = zbd_->ResetTartetUnusedIOZones(x);
@@ -504,11 +504,7 @@ void ZenFS::MyGCWorker(const bool MODE) {
       IOStatus s;
       Info(logger_, "Garbage collecting %d extents \n",
            (int)migrate_exts.size());
-      if (MYALGO == true) {
         s = GreedyMigrateExtents(migrate_exts, greedy_zone_id);
-      } else {
-        s = MigrateExtents(migrate_exts);
-      }
 
       if (!s.ok()) {
         Error(logger_, "Garbage collection failed");
@@ -844,7 +840,7 @@ IOStatus ZenFS::NewWritableFile(const std::string& filename,
 //0 prediction lifetime
 //1 real lifetime
 IOStatus ZenFS::SetFileLifetime(std::string fname, uint64_t lifetime,
-                                int clock, bool flag) {
+                                int clock, bool flag, int level) {
   global_clock = clock;
   const uint64_t MAX = 1e9;
   if (lifetime > MAX) {
@@ -859,7 +855,7 @@ IOStatus ZenFS::SetFileLifetime(std::string fname, uint64_t lifetime,
     std::shared_ptr<ZoneFile> tmp = files_[f];
     if (!flag) {
       tmp->new_lifetime = lifetime;
-
+      tmp->new_type = (level <= SHORT_THE) ? 0 : 1;
       if (tmp->GetActiveZone() != NULL) {
         printf("ERROR: ZoneFile has actived file_id=%ld zone_id=%ld\n",
                tmp->GetID(), tmp->GetActiveZone()->id);
@@ -886,9 +882,9 @@ IOStatus ZenFS::SetFileLifetime(std::string fname, uint64_t lifetime,
       printf(
           "SetFileLifetime Success name=%s get_io_zones_size=%ld "
           "lifetime_list_size=%ld set_zone_id=%ld set_file_id=%ld lifetime=%ld "
-          "flag=%d\n",
+          "flag=%d level=%d\n",
           f.c_str(), zbd_->get_io_zones().size(), lifetime_list_size,
-          tmp->zone_id, files_[f]->GetID(), lifetime, flag);
+          tmp->zone_id, files_[f]->GetID(), lifetime, flag, level);
     }
     return IOStatus::OK();
   }

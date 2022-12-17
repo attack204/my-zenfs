@@ -51,6 +51,8 @@ class MetadataWriter {
 class ZoneFile {
  public:
   uint64_t new_lifetime = 0;
+  int new_type;
+
   uint64_t zone_begin;
   uint64_t zone_id;
   std::string debug_fname;

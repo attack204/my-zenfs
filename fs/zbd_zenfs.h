@@ -35,11 +35,16 @@ const int INF = 1e9;
 
 //true: use my algorithm
 //false: use default algorithm
-const bool MYMODE = true; 
+const bool MYMODE = false; 
 const int MAX_DIFFTIME = 0; //ALGO 2 3
-const int T = 800;
-const int K = 2; //gc top k
+const int T = 1500;
+const int CALC_RESET = 0;
+const int SHORT_THE = 4;
 
+
+
+
+const int K = 2; //gc top k
 //Test wp
 const uint64_t GC_START_LEVEL = 80;                   
 const uint64_t GC_STOP_LEVEL = 90;
@@ -53,7 +58,6 @@ const bool DISABLE_RESET = false;
 
 const int ZoneNumber = 32;
 //don't need to modify
-const bool MYALGO = true;
 extern int reset_zone_num;
 
 
@@ -91,6 +95,7 @@ class Zone {
   Env::WriteLifeTimeHint lifetime_;
   uint64_t min_lifetime;
   uint64_t max_lifetime;
+  int lifetime_type; //0 top 1 upper
   std::atomic<uint64_t> used_capacity_;
   std::vector<uint64_t> files_id;
   std::vector<uint64_t> lifetime_list;
@@ -264,7 +269,7 @@ class ZonedBlockDevice {
 
   IOStatus AllocateIOZone(Env::WriteLifeTimeHint file_lifetime, IOType io_type,
                           Zone **out_zone);
-  IOStatus AllocateIOZone(Env::WriteLifeTimeHint file_lifetime, IOType io_type, Zone **out_zone, uint64_t new_lifetime);
+  IOStatus AllocateIOZone(Env::WriteLifeTimeHint file_lifetime, IOType io_type, Zone **out_zone, uint64_t new_lifetime, int new_type);
   IOStatus AllocateMetaZone(Zone **out_meta_zone);
 
   uint64_t GetFreeSpace();
@@ -321,8 +326,8 @@ class ZonedBlockDevice {
   IOStatus GetBestOpenZoneMatch(Env::WriteLifeTimeHint file_lifetime,
                                 unsigned int *best_diff_out, Zone **zone_out,
                                 uint32_t min_capacity = 0);
-  IOStatus GetBestOpenZoneMatch(uint64_t new_lifetime_, Env::WriteLifeTimeHint file_lifetime,
-                              unsigned int *best_diff_out, Zone **zone_out, int flag,
+  IOStatus GetBestOpenZoneMatch(uint64_t new_lifetime_, int new_type, Env::WriteLifeTimeHint file_lifetime,
+                              unsigned int *best_diff_out, Zone **zone_out, int flag, int flag2,
                               uint32_t min_capacity = 0);
   IOStatus AllocateEmptyZone(Zone **zone_out);
 };
