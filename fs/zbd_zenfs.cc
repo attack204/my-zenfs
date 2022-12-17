@@ -820,6 +820,9 @@ IOStatus ZonedBlockDevice::GetBestOpenZoneMatch(
   return IOStatus::OK();
 }
 
+extern int allocated_zone_num;
+
+
 // 当Allocate IO zone失效的时候调用此函数来申请一个新的zone
 IOStatus ZonedBlockDevice::AllocateEmptyZone(Zone **zone_out) {
   IOStatus s;
@@ -836,6 +839,9 @@ IOStatus ZonedBlockDevice::AllocateEmptyZone(Zone **zone_out) {
     }
   }
   *zone_out = allocated_zone;
+  if(allocated_zone != nullptr) {
+    allocated_zone_num++;
+  }
   new_log_writer(*zone_out);
   printf("io_zones number = %ld and zone_out = %d\n", io_zones.size(),
          zone_out == nullptr ? 0 : 1);
@@ -1146,6 +1152,7 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
         printf("allocated_new_zone znoe_id=%ld l=%ld r=%ld\n", allocated_zone->id, allocated_zone->min_lifetime, allocated_zone->max_lifetime);
         new_zone = true;
         add_allocation_off(3, file_lifetime, allocated_zone);
+        add_allocation(3, file_lifetime, allocated_zone);
         allocated_zone->hint_num[file_lifetime]++;
       } else {
         PutActiveIOZoneToken();

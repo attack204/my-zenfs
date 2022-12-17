@@ -45,6 +45,7 @@ extern bool DoPreCompaction(std::vector<uint64_t> file_list);
 
 extern void set_write_amplification(double wp);
 extern void set_reset_num(int reset_num);
+extern void set_allocated_num(int allocated_zone_num);
 extern int get_clock();
 
 uint64_t write_size_calc;
@@ -291,6 +292,7 @@ ZenFS::~ZenFS() {
 const int SLEEP_TIME = 1000 * 1000;
 const int MB = 1024 * 1024;
 int reset_zone_num = 0;
+int allocated_zone_num = 0;
 uint64_t total_file_num = 0;
 uint64_t total_size = 0;
 uint64_t total_extents = 0;
@@ -300,6 +302,7 @@ void ZenFS::MyGCWorker(const bool MODE) {
   while (run_gc_worker_) {
     set_write_amplification(1.0 * write_size_calc / GetIOSTATS());
     set_reset_num(reset_zone_num);
+    set_allocated_num(allocated_zone_num);
     usleep(SLEEP_TIME);
     uint64_t non_free = zbd_->GetUsedSpace() + zbd_->GetReclaimableSpace();
     uint64_t free = zbd_->GetFreeSpace();
