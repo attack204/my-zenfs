@@ -284,7 +284,6 @@ IOStatus ZoneFile::CloseActiveZone() {
     bool full = active_zone_->IsFull();
     print_stacktrace();
     printf("close_active_zone_id=%ld capacity=%ld\n", active_zone_->id, active_zone_->capacity_);
-    write_size_calc += active_zone_->capacity_;
     s = active_zone_->Close();
     ReleaseActiveZone();
     if (!s.ok()) {
