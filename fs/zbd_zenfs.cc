@@ -748,9 +748,9 @@ IOStatus ZonedBlockDevice::GetBestOpenZoneMatch(
       if ((z->used_capacity_ > 0) && !z->IsFull() &&
           z->capacity_ >= min_capacity) {
         printf(
-            "GetBestOpenZoneMatch zone_id=%ld new_lifetime_=%ld "
-            "min_lifetime=%ld max_lifetime=%ld global_clock=%d\n",
-            z->id, new_lifetime_, z->min_lifetime, z->max_lifetime,
+            "GetBestOpenZoneMatch zone_id=%ld new_lifetime_=%ld new_type=%d"
+            "min_lifetime=%ld max_lifetime=%ld zone_type=%d global_clock=%d\n",
+            z->id, new_lifetime_, new_type, z->min_lifetime, z->max_lifetime, z->lifetime_type,
             global_clock);
         //new_type: file type
         //lifetime_type: zone type;
@@ -1095,8 +1095,8 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
   /* Try to fill an already open zone(with the best life time diff) */
   if (MYMODE == true) {
 
-    s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
-                            &allocated_zone, 0, 0);
+ //   s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
+  //                          &allocated_zone, 0, 0);
     if(allocated_zone == nullptr) {
       s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
                               &allocated_zone, 0, 1);

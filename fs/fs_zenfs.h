@@ -311,7 +311,7 @@ class ZenFS : public FileSystemWrapper {
                                    std::unique_ptr<FSWritableFile>* result,
                                    IODebugContext* dbg) override;
   virtual IOStatus SetFileLifetime(std::string fname, 
-                                   uint64_t lifetime, int clock, bool flag, int level);
+                                   uint64_t lifetime, int clock, bool flag, int level, std::vector<std::string> overlap_list);
   virtual IOStatus ReuseWritableFile(const std::string& fname,
                                      const std::string& old_fname,
                                      const FileOptions& file_opts,

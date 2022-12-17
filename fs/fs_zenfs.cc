@@ -840,7 +840,7 @@ IOStatus ZenFS::NewWritableFile(const std::string& filename,
 //0 prediction lifetime
 //1 real lifetime
 IOStatus ZenFS::SetFileLifetime(std::string fname, uint64_t lifetime,
-                                int clock, bool flag, int level) {
+                                int clock, bool flag, int level, std::vector<std::string> overlap_list) {
   global_clock = clock;
   const uint64_t MAX = 1e9;
   if (lifetime > MAX) {
@@ -882,9 +882,9 @@ IOStatus ZenFS::SetFileLifetime(std::string fname, uint64_t lifetime,
       printf(
           "SetFileLifetime Success name=%s get_io_zones_size=%ld "
           "lifetime_list_size=%ld set_zone_id=%ld set_file_id=%ld lifetime=%ld "
-          "flag=%d level=%d\n",
+          "flag=%d level=%d over_list.size=%ld\n",
           f.c_str(), zbd_->get_io_zones().size(), lifetime_list_size,
-          tmp->zone_id, files_[f]->GetID(), lifetime, flag, level);
+          tmp->zone_id, files_[f]->GetID(), lifetime, flag, level, overlap_list.size());
     }
     return IOStatus::OK();
   }
