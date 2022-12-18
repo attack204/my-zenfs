@@ -712,6 +712,11 @@ IOStatus ZonedBlockDevice::GetBestOpenZoneMatch(
       if ((z->used_capacity_ > 0) && !z->IsFull() &&
           z->capacity_ >= min_capacity) {  // 如果说zone仍然有剩余空间
         unsigned int diff = GetLifeTimeDiff(z->lifetime_, file_lifetime);
+         printf(
+              "GetBestOpenZoneMatch Off zone_id=%ld "
+              "min_lifetime=%ld max_lifetime=%ld zone_hint=%d zone_type=%d global_clock=%d\n",
+              z->id, z->min_lifetime, z->max_lifetime, z->lifetime_, z->lifetime_type,
+              global_clock);
         if (diff <= best_diff) {  // 如果要比best_diff小
           if (allocated_zone !=
               nullptr) {  // 如果之前已经有过allocate_zone allocated_zone
@@ -754,7 +759,7 @@ IOStatus ZonedBlockDevice::GetBestOpenZoneMatch(
   if(new_lifetime_ == 0) {
     new_type = ((SHORT_THE == -1) ? 1 : 0);
   }
-  if(overlap_zone_list.size() != 0) {
+  if(overlap_zone_list.size() != 0 && ENABLE_CAZA) {
     for (const auto z : io_zones) {
       if(find(overlap_zone_list.begin(), overlap_zone_list.end(), z->id) == overlap_zone_list.end()) continue; 
       if (z->Acquire()) {
@@ -1097,44 +1102,46 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
 
   /* Try to fill an already open zone(with the best life time diff) */
   if (MYMODE == true) {
-    if(overlap_zone_list.size() != 0) {
-      s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
-                           &allocated_zone, 0, 0, overlap_zone_list);
-    }
-    if(allocated_zone == nullptr) {
-      s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
-                            &allocated_zone, 0, 0, std::vector<uint64_t>{});
+    if(new_type == 0){
+       s = GetBestOpenZoneMatch(file_lifetime, &best_diff, &allocated_zone, 0);
+    } else {
+      //overlap_list
+      if(overlap_zone_list.size() != 0 && ENABLE_CAZA) {
+        s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
+                            &allocated_zone, 0, 0, overlap_zone_list);
+      }
       if(allocated_zone == nullptr) {
         s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
-                                &allocated_zone, 0, 1, std::vector<uint64_t>{});
-
-        if (allocated_zone == nullptr) {  // try again, find the
+                              &allocated_zone, 0, 0, std::vector<uint64_t>{});
+        if(allocated_zone == nullptr) {
           s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
-                                  &allocated_zone, 1, 1, std::vector<uint64_t>{});
-        
+                                  &allocated_zone, 0, 1, std::vector<uint64_t>{});
+
           if (allocated_zone == nullptr) {  // try again, find the
             s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
-                                    &allocated_zone, 2, 1, std::vector<uint64_t>{});
-            if(allocated_zone != nullptr) {
-              add_allocation(1, 2, new_lifetime, new_type, allocated_zone);
+                                    &allocated_zone, 1, 1, std::vector<uint64_t>{});
+          
+            if (allocated_zone == nullptr) {  // try again, find the
+              s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
+                                      &allocated_zone, 2, 1, std::vector<uint64_t>{});
+              if(allocated_zone != nullptr) {
+                add_allocation(1, 2, new_lifetime, new_type, allocated_zone);
+              }
+            } else {
+              add_allocation(1, 1, new_lifetime, new_type, allocated_zone);
             }
           } else {
-            add_allocation(1, 1, new_lifetime, new_type, allocated_zone);
+            add_allocation(1, 0, new_lifetime, new_type, allocated_zone);
           }
         } else {
-          add_allocation(1, 0, new_lifetime, new_type, allocated_zone);
+          add_allocation(0, 0, new_lifetime, new_type,allocated_zone);
         }
       } else {
-        add_allocation(0, 0, new_lifetime, new_type,allocated_zone);
-      }
-    } else {
-      add_allocation(0, 4, new_lifetime, new_type,allocated_zone);
+        add_allocation(0, 4, new_lifetime, new_type,allocated_zone);
+      }    
     }
 
-
-
-    
-  } else {
+  } else if(MYMODE == false) {
     s = GetBestOpenZoneMatch(file_lifetime, &best_diff, &allocated_zone, 0);
     if(allocated_zone != nullptr) {
        add_allocation_off(0, file_lifetime, allocated_zone);
@@ -1204,7 +1211,7 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
           allocated_zone->min_lifetime = new_lifetime;
         }
         allocated_zone->max_lifetime = new_lifetime + T;
-        printf("allocated_new_zone znoe_id=%ld l=%ld r=%ld lifetime_type=%d \n", allocated_zone->id, allocated_zone->min_lifetime, allocated_zone->max_lifetime, new_type);
+        printf("allocated_new_zone znoe_id=%ld l=%ld r=%ld HINT=%d new_type=%d \n", allocated_zone->id, allocated_zone->min_lifetime, allocated_zone->max_lifetime, file_lifetime, new_type);
         new_zone = true;
         add_allocation_off(3, file_lifetime, allocated_zone);
         add_allocation(3, 3, file_lifetime, new_type, allocated_zone);

@@ -343,6 +343,7 @@ void ZenFS::MyGCWorker(const bool MODE) {
     std::vector<uint64_t> greedy_zone_id;
     std::vector<uint64_t> used_cap;
     std::vector<int> hint_list;
+    std::vector<int> type_list;
     uint64_t migrate_file_num = 0;
     uint64_t migrate_size = 0;
     std::vector<std::vector<uint64_t> > lifetime_list_v;
@@ -405,6 +406,7 @@ void ZenFS::MyGCWorker(const bool MODE) {
         greedy_zone_id.emplace_back(zone.id);
         lifetime_list_v.emplace_back(zone.lifetime_list);
         hint_list.emplace_back(zone.lifetime_);
+        type_list.emplace_back(zone.lifetime_type);
         hint_num_v.emplace_back(zone.hint_num);
         prediction_lifetime_list_v.emplace_back(zone.prediction_lifetime_list);
         tot++;
@@ -447,9 +449,9 @@ void ZenFS::MyGCWorker(const bool MODE) {
 
         if (!lifetime_list.empty()) {
           printf(
-              "zone_id=%ld diff=%ld HINT=%d Real_list size=%ld used=%ld min_time=%ld "
+              "zone_id=%ld diff=%ld HINT=%d type=%d Real_list size=%ld used=%ld min_time=%ld "
               "max_time=%ld [",
-              greedy_zone_id[i], lifetime_list[lifetime_list.size() - 1] - lifetime_list[0], hint_list[i],
+              greedy_zone_id[i], lifetime_list[lifetime_list.size() - 1] - lifetime_list[0], hint_list[i], type_list[i],
               lifetime_list.size(), used_cap[i], lifetime_list[0],
               lifetime_list[lifetime_list.size() - 1]);
           for (auto& x : lifetime_list) {
@@ -463,10 +465,10 @@ void ZenFS::MyGCWorker(const bool MODE) {
         if(MYMODE == true) {
           if (!prediction_lifetime_list.empty()) {
             printf(
-                "Zone_id=%ld diff=%ld HINT=%d Pred_list size=%ld used=%ld min_lifetime=%ld "
+                "Zone_id=%ld diff=%ld HINT=%d type=%d Pred_list size=%ld used=%ld min_lifetime=%ld "
                 "max_lifetime=%ld[",
                 greedy_zone_id[i], prediction_lifetime_list[prediction_lifetime_list.size() - 1] -
-                    prediction_lifetime_list[0], hint_list[i], prediction_lifetime_list.size(), used_cap[i],
+                    prediction_lifetime_list[0], hint_list[i], type_list[i], prediction_lifetime_list.size(), used_cap[i],
                 prediction_lifetime_list[0],
                 prediction_lifetime_list[prediction_lifetime_list.size() - 1]);
             for (auto& x : prediction_lifetime_list) {
@@ -855,7 +857,9 @@ IOStatus ZenFS::SetFileLifetime(std::string fname, uint64_t lifetime,
            f.c_str(), fname.c_str(), lifetime, flag);
     return IOStatus::IOError("Can't find file:" + fname);
   } else {
+
     std::shared_ptr<ZoneFile> tmp = files_[f];
+     uint64_t lifetime_list_size = 0;
     if (!flag) {
       tmp->new_lifetime = lifetime;
       tmp->new_type = (level <= SHORT_THE) ? 0 : 1;
@@ -863,8 +867,6 @@ IOStatus ZenFS::SetFileLifetime(std::string fname, uint64_t lifetime,
         printf("ERROR: ZoneFile has actived file_id=%ld zone_id=%ld\n",
                tmp->GetID(), tmp->GetActiveZone()->id);
       }
-
-
       for(auto &x: overlap_list) {
         std::string name = FormatPathLexically(x);
         if(files_.find(name) == files_.end()) {
@@ -882,7 +884,7 @@ IOStatus ZenFS::SetFileLifetime(std::string fname, uint64_t lifetime,
 
 
     } else {
-      uint64_t lifetime_list_size = 0;
+    
       if (tmp->zone_id != 0) {
         for (auto* zone : zbd_->get_io_zones()) {
           // printf("zone_information zone_id=%ld zone_capacity=%ld
@@ -900,13 +902,14 @@ IOStatus ZenFS::SetFileLifetime(std::string fname, uint64_t lifetime,
       } else {
         printf("ERROR: Flag = 1 GetActiveZone is NULL\n");
       }
-      printf(
-          "SetFileLifetime Success name=%s get_io_zones_size=%ld "
-          "lifetime_list_size=%ld set_zone_id=%ld set_file_id=%ld lifetime=%ld "
-          "flag=%d level=%d over_list.size=%ld\n",
-          f.c_str(), zbd_->get_io_zones().size(), lifetime_list_size,
-          tmp->zone_id, files_[f]->GetID(), lifetime, flag, level, overlap_list.size());
+
     }
+    printf(
+    "SetFileLifetime Success name=%s get_io_zones_size=%ld "
+    "lifetime_list_size=%ld set_zone_id=%ld set_file_id=%ld lifetime=%ld "
+    "flag=%d level=%d over_list.size=%ld new_type=%d\n",
+    f.c_str(), zbd_->get_io_zones().size(), lifetime_list_size,
+    tmp->zone_id, files_[f]->GetID(), lifetime, flag, level, overlap_list.size(), tmp->new_type);
     return IOStatus::OK();
   }
 }

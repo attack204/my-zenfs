@@ -466,7 +466,7 @@ IOStatus ZoneFile::AllocateNewZone() {
   } else {
     max_global_clock = std::max(max_global_clock, new_lifetime);
   }
-  
+  printf("AllocateNewZone file_id=%ld HINT=%d new_lifetime=%ld new_type=%d\n", file_id_, lifetime_, new_lifetime, new_type);
     s = zbd_->AllocateIOZone(lifetime_, io_type_, &zone, new_lifetime, new_type, overlap_zone_list); //my_allocate_alogortihm
   if (!s.ok()) return s;
   if (!zone) {
@@ -475,8 +475,8 @@ IOStatus ZoneFile::AllocateNewZone() {
   SetActiveZone(zone);
   zone_begin = zone->start_;
   zone_id = zone->id;
-  printf("ZoneFile::AllocateNewZone file_name=%s io_zone_number=%ld allocate_file_id=%ld zone_id=%ld lifetime=%ld min_lifetime=%ld max_lifetime=%ld zone_left=%ld\n", 
-    debug_fname.c_str(), GetZbd()->GetIOZones().size(), GetID(), GetActiveZone()->id, new_lifetime, zone->min_lifetime, zone->max_lifetime, zone->GetCapacityLeft());
+  printf("ZoneFile::AllocateNewZone file_name=%s file_hint=%d io_zone_number=%ld allocate_file_id=%ld zone_id=%ld zone_hint=%d lifetime=%ld min_lifetime=%ld max_lifetime=%ld zone_left=%ld\n", 
+    debug_fname.c_str(), lifetime_, GetZbd()->GetIOZones().size(), GetID(), GetActiveZone()->id, zone->lifetime_, new_lifetime, zone->min_lifetime, zone->max_lifetime, zone->GetCapacityLeft());
   
   extent_start_ = active_zone_->wp_;
   extent_filepos_ = file_size_;
