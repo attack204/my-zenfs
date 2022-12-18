@@ -379,7 +379,7 @@ void ZenFS::MyGCWorker() {
       std::vector<uint64_t>& file_list = zone_file_list[zone.start];
      // std::vector<std::shared_ptr<ZoneFile>>& file_list_all = zone_file_list_all[zone.start];
 
-      if (zone.capacity == 0) {
+      if (zone.capacity == 0 && zone.lifetime_ != 0) {
 
         migrate_zones_start.emplace(zone.start);
         migrate_size += zone.used_capacity;
