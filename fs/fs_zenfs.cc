@@ -44,11 +44,13 @@ extern uint64_t GetIOSTATS();
 extern bool DoPreCompaction(std::vector<uint64_t> file_list);
 
 extern void set_write_amplification(double wp);
+extern void set_write_amplification_no_set(double wp);
 extern void set_reset_num(int reset_num);
 extern void set_allocated_num(int allocated_zone_num);
 extern int get_clock();
 
 uint64_t write_size_calc;
+uint64_t write_size_calc_no_reset;
 
 Status Superblock::DecodeFrom(Slice* input) {
   if (input->size() != ENCODED_SIZE) {
@@ -301,6 +303,7 @@ void ZenFS::MyGCWorker(const bool MODE) {
   uint32_t running = 0;
   while (run_gc_worker_) {
     set_write_amplification(1.0 * write_size_calc / GetIOSTATS());
+    set_write_amplification_no_set(1.0 * write_size_calc_no_reset / GetIOSTATS());
     set_reset_num(reset_zone_num);
     set_allocated_num(allocated_zone_num);
     usleep(SLEEP_TIME);

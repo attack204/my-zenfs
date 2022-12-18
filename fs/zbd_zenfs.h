@@ -35,10 +35,9 @@ const int INF = 1e9;
 
 //true: use my algorithm
 //false: use default algorithm
-const bool MYMODE = false; 
+const bool MYMODE = true; 
 const int MAX_DIFFTIME = 0; //ALGO 2 3
-const int T = 600;
-const int CALC_RESET = 0;
+const int T = INF;
 const int ENABLE_T_RANGE = 1; //1 means [-T, T]
 const int SHORT_THE = 2;
 const int ENABLE_CAZA = 1;;
@@ -46,6 +45,7 @@ const int ENABLE_CAZA = 1;;
 
 
 
+const int CALC_RESET = 1;
 const int K = 2; //gc top k
 //Test wp
 const uint64_t GC_START_LEVEL = 80;                   

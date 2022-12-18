@@ -792,7 +792,7 @@ IOStatus ZonedBlockDevice::GetBestOpenZoneMatch(
               "GetBestOpenZoneMatch Normal zone_id=%ld new_lifetime_=%ld new_type=%d "
               "min_lifetime=%ld max_lifetime=%ld zone_type=%d global_clock=%d flag=%d flag2=%d overlap_list.size()=%ld\n",
               z->id, new_lifetime_, new_type, z->min_lifetime, z->max_lifetime, z->lifetime_type,
-              global_clock, flag, flag2, overlap_zone_list);
+              global_clock, flag, flag2, overlap_zone_list.size());
           //new_type: file type
           //lifetime_type: zone type;
           if( (new_type == 0 && z->lifetime_type == 0 && flag2 == 0) 

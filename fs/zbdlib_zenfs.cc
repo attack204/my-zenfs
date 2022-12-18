@@ -176,6 +176,8 @@ int ZbdlibBackend::Read(char *buf, int size, uint64_t pos, bool direct) {
 
 int ZbdlibBackend::Write(char *data, uint32_t size, uint64_t pos) {
   write_size_calc += size;
+  write_size_calc_no_reset += size;
+
   return pwrite(write_f_, data, size, pos);
 }
 

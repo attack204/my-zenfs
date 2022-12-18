@@ -18,6 +18,7 @@
 namespace ROCKSDB_NAMESPACE {
 
 extern uint64_t write_size_calc;
+extern uint64_t write_size_calc_no_reset;
 
 class ZbdlibBackend : public ZonedBlockDeviceBackend {
  private:

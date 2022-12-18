@@ -33,6 +33,8 @@
 namespace ROCKSDB_NAMESPACE {
 
 extern uint64_t write_size_calc;
+extern uint64_t write_size_calc_no_reset;
+
 
 ZoneExtent::ZoneExtent(uint64_t start, uint64_t length, Zone* zone)
     : start_(start), length_(length), zone_(zone) {}
