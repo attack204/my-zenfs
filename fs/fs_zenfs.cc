@@ -298,7 +298,7 @@ int allocated_zone_num = 0;
 uint64_t total_file_num = 0;
 uint64_t total_size = 0;
 uint64_t total_extents = 0;
-void ZenFS::MyGCWorker(const bool MODE) {
+void ZenFS::MyGCWorker() {
   uint32_t gc_times = 0;
   uint32_t running = 0;
   while (run_gc_worker_) {
@@ -359,10 +359,7 @@ void ZenFS::MyGCWorker(const bool MODE) {
     for (const auto& zone : snapshot.zones_) {
       std::vector<uint64_t>& file_list = zone_file_list[zone.start];
      // std::vector<std::shared_ptr<ZoneFile>>& file_list_all = zone_file_list_all[zone.start];
-
-      if (zone.capacity == 0 &&
-         // ((MODE == false) || (MODE == true && zone.min_lifetime != 0))) {
-          ((MODE == false) || (MODE == true))) {
+      if (zone.capacity == 0 && zone.lifetime_ != 0) {
         printf(
             "zone: zone_start=%ld zone_id=%ld L=%ld R=%ld capacity=%ld "
             "used_capacity=%ld max_capacity=%ld file_list_size=%ld\n",
@@ -382,8 +379,7 @@ void ZenFS::MyGCWorker(const bool MODE) {
       std::vector<uint64_t>& file_list = zone_file_list[zone.start];
      // std::vector<std::shared_ptr<ZoneFile>>& file_list_all = zone_file_list_all[zone.start];
 
-      if (zone.capacity == 0 &&
-          ((MODE == false) || (MODE == true))) {
+      if (zone.capacity == 0) {
 
         migrate_zones_start.emplace(zone.start);
         migrate_size += zone.used_capacity;
@@ -1762,7 +1758,7 @@ Status ZenFS::Mount(bool readonly) {
     // if (superblock_->IsGCEnabled()) {
     Info(logger_, "Starting garbage collection worker");
     run_gc_worker_ = true;
-    gc_worker_.reset(new std::thread(&ZenFS::MyGCWorker, this, MYMODE));
+    gc_worker_.reset(new std::thread(&ZenFS::MyGCWorker, this));
     //}
   }
 

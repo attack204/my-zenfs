@@ -43,7 +43,7 @@ const int ENABLE_CAZA = 0;
 
 const int SHORT_THE = 2;
 const int CALC_RESET = 1;
-const int K = 2; //gc top k
+const int K = 1; //gc top k
 //Test wp
 const uint64_t GC_START_LEVEL = 80;                   
 const uint64_t GC_STOP_LEVEL = 90;

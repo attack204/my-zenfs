@@ -1206,7 +1206,7 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
         allocated_zone->lifetime_type = new_type;
         //if(new_lifetime < T)
         if(ENABLE_T_RANGE) {
-          allocated_zone->min_lifetime = (new_lifetime < T ? 1: new_lifetime - T);
+          allocated_zone->min_lifetime = (new_lifetime < T ? 0: new_lifetime - T);
         } else {
           allocated_zone->min_lifetime = new_lifetime;
         }

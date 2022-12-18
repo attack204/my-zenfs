@@ -470,7 +470,7 @@ class ZenFS : public FileSystemWrapper {
 
  private:
   const uint64_t GC_SLOPE = 3; /* GC agressiveness */
-  void MyGCWorker(const bool MYMODE);
+  void MyGCWorker();
 };
 #endif  // !defined(ROCKSDB_LITE) && defined(OS_LINUX)
 
