@@ -1102,9 +1102,9 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
 
   /* Try to fill an already open zone(with the best life time diff) */
   if (MYMODE == true) {
-    if(new_type == 0){
-       s = GetBestOpenZoneMatch(file_lifetime, &best_diff, &allocated_zone, 0);
-    } else {
+    // if(new_type == 0){
+    //    s = GetBestOpenZoneMatch(file_lifetime, &best_diff, &allocated_zone, 0);
+    // } else {
       //overlap_list
       if(overlap_zone_list.size() != 0 && ENABLE_CAZA) {
         s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
@@ -1139,7 +1139,7 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
       } else {
         add_allocation(0, 4, new_lifetime, new_type,allocated_zone);
       }    
-    }
+    //}
 
   } else if(MYMODE == false) {
     s = GetBestOpenZoneMatch(file_lifetime, &best_diff, &allocated_zone, 0);

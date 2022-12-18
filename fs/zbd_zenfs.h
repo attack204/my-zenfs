@@ -50,7 +50,7 @@ const int K = 2; //gc top k
 //Test wp
 const uint64_t GC_START_LEVEL = 80;                   
 const uint64_t GC_STOP_LEVEL = 90;
-const bool DISABLE_RESET = false;
+const bool DISABLE_RESET = true;
 
 
 // Test space waste
@@ -58,7 +58,7 @@ const bool DISABLE_RESET = false;
 // const uint64_t GC_STOP_LEVEL = 100;
 // const bool DISABLE_RESET = true;
 
-const int ZoneNumber = 32;
+const int ZoneNumber = 100;
 //don't need to modify
 extern int reset_zone_num;
 
