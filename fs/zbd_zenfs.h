@@ -35,7 +35,7 @@ const int INF = 1e9;
 
 //true: use my algorithm
 //false: use default algorithm
-const bool MYMODE = true; 
+const bool MYMODE = false; 
 const int MAX_DIFFTIME = 0; //ALGO 2 3
 const int T = INF;
 const int ENABLE_T_RANGE = 1; //1 means [-T, T]
