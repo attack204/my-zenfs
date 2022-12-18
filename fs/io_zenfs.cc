@@ -465,7 +465,7 @@ IOStatus ZoneFile::AllocateNewZone() {
     max_global_clock = std::max(max_global_clock, new_lifetime);
   }
   
-    s = zbd_->AllocateIOZone(lifetime_, io_type_, &zone, new_lifetime, new_type); //my_allocate_alogortihm
+    s = zbd_->AllocateIOZone(lifetime_, io_type_, &zone, new_lifetime, new_type, overlap_zone_list); //my_allocate_alogortihm
   if (!s.ok()) return s;
   if (!zone) {
     return IOStatus::NoSpace("Zone allocation failure\n");

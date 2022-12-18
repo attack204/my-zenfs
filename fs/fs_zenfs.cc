@@ -860,6 +860,24 @@ IOStatus ZenFS::SetFileLifetime(std::string fname, uint64_t lifetime,
         printf("ERROR: ZoneFile has actived file_id=%ld zone_id=%ld\n",
                tmp->GetID(), tmp->GetActiveZone()->id);
       }
+
+
+      for(auto &x: overlap_list) {
+        std::string name = FormatPathLexically(x);
+        if(files_.find(name) == files_.end()) {
+          printf("ERROR: can't find overlap file\n");
+          continue;
+        } 
+        std::shared_ptr<ZoneFile> overlap_f_ptr = files_[name];
+        for (auto* zone : zbd_->get_io_zones()) {
+          if (zone->id == overlap_f_ptr->zone_id) {
+            tmp->overlap_zone_list.emplace_back(zone->id);
+
+          }
+        }
+      }
+
+
     } else {
       uint64_t lifetime_list_size = 0;
       if (tmp->zone_id != 0) {

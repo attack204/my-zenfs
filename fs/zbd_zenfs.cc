@@ -51,12 +51,22 @@ namespace ROCKSDB_NAMESPACE {
 
 static int cnt[5];
 static int cnt_zone_hint[6];
+/*
+flag2: SHORT_THE 
+flag: 
+0: in [L, R]
+1: x < [L, R]
+2: [L, R] < x
+3: open new zone
+4: overlap zone
+
+*/
 void add_allocation(int flag2, int flag, uint64_t lifetime, int new_type, Zone *zone) {
   cnt[flag]++;
   printf("allocation_type:flag2=%d flag=%d lifetime=%ld new_type=%d ", flag2, flag, lifetime, new_type);
   if(zone != nullptr)
     printf("zone_id=%ld zone_l=%ld zone_r=%ld zone_type=%d", zone->id, zone->min_lifetime, zone->max_lifetime, zone->lifetime_type);
-  for(int i = 0; i < 4; i++) printf("type%d=%d ", i, cnt[i]);
+  for(int i = 0; i < 5; i++) printf("type%d=%d ", i, cnt[i]);
   printf("\n");
 }
 void add_allocation_off(int flag, Env::WriteLifeTimeHint lifetime, Zone *zone) {
@@ -735,7 +745,7 @@ int global_clock = 0;
 // Allocate只需要传入一个file_lifetime即可
 IOStatus ZonedBlockDevice::GetBestOpenZoneMatch(
     uint64_t new_lifetime_, int new_type, Env::WriteLifeTimeHint file_lifetime,
-    unsigned int *best_diff_out, Zone **zone_out, int flag, int flag2,
+    unsigned int *best_diff_out, Zone **zone_out, int flag, int flag2, std::vector<uint64_t> overlap_zone_list,
     uint32_t min_capacity) {
   unsigned int best_diff = LIFETIME_DIFF_NOT_GOOD;
   Zone *allocated_zone = nullptr;
@@ -744,107 +754,99 @@ IOStatus ZonedBlockDevice::GetBestOpenZoneMatch(
   if(new_lifetime_ == 0) {
     new_type = ((SHORT_THE == -1) ? 1 : 0);
   }
-  for (const auto z : io_zones) {
-    if (z->Acquire()) {
-      if ((z->used_capacity_ > 0) && !z->IsFull() &&
-          z->capacity_ >= min_capacity) {
-        printf(
-            "GetBestOpenZoneMatch zone_id=%ld new_lifetime_=%ld new_type=%d "
-            "min_lifetime=%ld max_lifetime=%ld zone_type=%d global_clock=%d flag=%d flag2=%d\n",
-            z->id, new_lifetime_, new_type, z->min_lifetime, z->max_lifetime, z->lifetime_type,
-            global_clock, flag, flag2);
-        //new_type: file type
-        //lifetime_type: zone type;
-        if( (new_type == 0 && z->lifetime_type == 0 && flag2 == 0) 
-            ||
-              (
-              ((new_type == 0 && z->lifetime_type == 1 && flag2 == 1) || (new_type == 1 && z->lifetime_type == 1 && flag2 == 1)) 
-              && 
-              (
-                (flag == 0 && (new_lifetime_ >= z->min_lifetime) && (new_lifetime_ <= z->max_lifetime)) ||
-                (flag == 1 && (new_lifetime_  < z->min_lifetime) && (z->min_lifetime - new_lifetime_ < mx)) || 
-                (flag == 2 && (new_lifetime_  > z->max_lifetime) && (new_lifetime_ - z->max_lifetime < mx) && (new_lifetime_ - z->max_lifetime <= MAX_DIFFTIME))
-              )
-              )
-        )
-        {
-          if(flag == 1 && (new_lifetime_ < z->min_lifetime)) 
-            mx = z->min_lifetime - new_lifetime_;
-          if(flag == 2 && (new_lifetime_ > z->max_lifetime))
-            mx = new_lifetime_ - z->max_lifetime;
-          if (allocated_zone != nullptr) {  // flag == 1 need to find the maximal max_lifetime
-            s = allocated_zone->CheckRelease();
-            if (!s.ok()) {
-              printf("InRangeButCheckRelease Fail\n");
-              IOStatus s_ = z->CheckRelease();
-              if (!s_.ok()) return s_;
-              return s;
+  if(overlap_zone_list.size() != 0) {
+    for (const auto z : io_zones) {
+      if(find(overlap_zone_list.begin(), overlap_zone_list.end(), z->id) == overlap_zone_list.end()) continue; 
+      if (z->Acquire()) {
+        if ((z->used_capacity_ > 0) && !z->IsFull() &&
+            z->capacity_ >= min_capacity) {
+          printf(
+              "GetBestOpenZoneMatch Overlap zone_id=%ld new_lifetime_=%ld new_type=%d "
+              "min_lifetime=%ld max_lifetime=%ld zone_type=%d global_clock=%d flag=%d flag2=%d overlap_list.size()=%ld\n",
+              z->id, new_lifetime_, new_type, z->min_lifetime, z->max_lifetime, z->lifetime_type,
+              global_clock, flag, flag2, overlap_zone_list.size());
+            if (allocated_zone != nullptr) {  // flag == 1 need to find the maximal max_lifetime
+              s = allocated_zone->CheckRelease();
+              if (!s.ok()) {
+                printf("InRangeButCheckRelease Fail\n");
+                IOStatus s_ = z->CheckRelease();
+                if (!s_.ok()) return s_;
+                return s;
+              }
             }
+            allocated_zone = z;
+            best_diff = 0;  // 把best_diff赋值为一个较小的值
+        } else {
+            s = z->CheckRelease();
+            if (!s.ok()) return s;
+        }
+      }
+    }
+  }
+  else {
+    for (const auto z : io_zones) {
+      if (z->Acquire()) {
+        if ((z->used_capacity_ > 0) && !z->IsFull() &&
+            z->capacity_ >= min_capacity) {
+          printf(
+              "GetBestOpenZoneMatch Normal zone_id=%ld new_lifetime_=%ld new_type=%d "
+              "min_lifetime=%ld max_lifetime=%ld zone_type=%d global_clock=%d flag=%d flag2=%d overlap_list.size()=%ld\n",
+              z->id, new_lifetime_, new_type, z->min_lifetime, z->max_lifetime, z->lifetime_type,
+              global_clock, flag, flag2, overlap_zone_list);
+          //new_type: file type
+          //lifetime_type: zone type;
+          if( (new_type == 0 && z->lifetime_type == 0 && flag2 == 0) 
+              ||
+                (
+                ((new_type == 0 && z->lifetime_type == 1 && flag2 == 1) || (new_type == 1 && z->lifetime_type == 1 && flag2 == 1)) 
+                && 
+                (
+                  (flag == 0 && (new_lifetime_ >= z->min_lifetime) && (new_lifetime_ <= z->max_lifetime)) ||
+                  (flag == 1 && (new_lifetime_  < z->min_lifetime) && (z->min_lifetime - new_lifetime_ < mx)) || 
+                  (flag == 2 && (new_lifetime_  > z->max_lifetime) && (new_lifetime_ - z->max_lifetime < mx) && (new_lifetime_ - z->max_lifetime <= MAX_DIFFTIME))
+                )
+                )
+          )
+          {
+            if(flag == 1 && (new_lifetime_ < z->min_lifetime)) 
+              mx = z->min_lifetime - new_lifetime_;
+            if(flag == 2 && (new_lifetime_ > z->max_lifetime))
+              mx = new_lifetime_ - z->max_lifetime;
+            if (allocated_zone != nullptr) {  // flag == 1 need to find the maximal max_lifetime
+              s = allocated_zone->CheckRelease();
+              if (!s.ok()) {
+                printf("InRangeButCheckRelease Fail\n");
+                IOStatus s_ = z->CheckRelease();
+                if (!s_.ok()) return s_;
+                return s;
+              }
+            }
+            allocated_zone = z;
+            best_diff = 0;  // 把best_diff赋值为一个较小的值
+            // if(flag == 0) break; //flag == 0 need to find the first valid zone
+          } else {
+            s = z->CheckRelease();
+            if (!s.ok()) return s;
           }
-          allocated_zone = z;
-          best_diff = 0;  // 把best_diff赋值为一个较小的值
-          // if(flag == 0) break; //flag == 0 need to find the first valid zone
+
         } else {
           s = z->CheckRelease();
           if (!s.ok()) return s;
         }
-
-      } else {
-        s = z->CheckRelease();
-        if (!s.ok()) return s;
       }
     }
   }
-
   *best_diff_out = best_diff;
   *zone_out = allocated_zone;
 
 
 
   return IOStatus::OK();
-
-
-
-    // for(const auto log_writer: log_writer_list) {
-  //   Zone *z = log_writer->get_current_zone();
-  //   if(z == nullptr) {
-  //     assert(remove_log_writer(log_writer));
-  //   }
-  //   if (z->Acquire()) {
-  //     if ((z->used_capacity_ > 0) && !z->IsFull() &&
-  //         z->capacity_ >= min_capacity) {
-  //       printf("GetBestOpenZoneMatch zone_id=%ld new_lifetime_=%ld
-  //       min_lifetime=%ld max_lifetime=%ld global_clock=%d\n", z->id,
-  //       new_lifetime_, z->min_lifetime, z->max_lifetime, global_clock);
-  //       unsigned int diff = GetLifeTimeDiff(z->lifetime_, file_lifetime);
-
-  //       if(new_lifetime_ >= z->min_lifetime && new_lifetime_ <=
-  //       z->max_lifetime) {
-  //         if (allocated_zone != nullptr) {
-  //           s = allocated_zone->CheckRelease();
-  //           if (!s.ok()) {
-  //             printf("InRangeButCheckRelease Fail\n");
-  //             IOStatus s_ = z->CheckRelease();
-  //             if (!s_.ok()) return s_;
-  //             return s;
-  //           }
-  //         }
-  //         allocated_zone = z;
-  //         best_diff = diff * 0;//把best_diff赋值为一个较小的值
-  //         //if(flag == 0) break; //flag == 0 need to find the first valid
-  //         zone
-  //       } else {
-  //         s = z->CheckRelease();
-  //         if (!s.ok()) return s;
-  //       }
-
-  //     } else {
-  //       s = z->CheckRelease();
-  //       if (!s.ok()) return s;
-  //     }
-  //   }
-  // }
 }
+
+
+
+
 
 extern int allocated_zone_num;
 
@@ -1058,7 +1060,7 @@ IOStatus ZonedBlockDevice::TakeMigrateZone(Zone **out_zone,
 
 IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
                                           IOType io_type, Zone **out_zone,
-                                          uint64_t new_lifetime, int new_type) {
+                                          uint64_t new_lifetime, int new_type, std::vector<uint64_t> overlap_zone_list) {
   printf("AllocateIOZone Begin\n");
   Zone *allocated_zone = nullptr;
   unsigned int best_diff = LIFETIME_DIFF_NOT_GOOD;
@@ -1095,32 +1097,40 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
 
   /* Try to fill an already open zone(with the best life time diff) */
   if (MYMODE == true) {
-
-    s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
-                           &allocated_zone, 0, 0);
+    if(overlap_zone_list.size() != 0) {
+      s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
+                           &allocated_zone, 0, 0, overlap_zone_list);
+    }
     if(allocated_zone == nullptr) {
       s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
-                              &allocated_zone, 0, 1);
-
-      if (allocated_zone == nullptr) {  // try again, find the
+                            &allocated_zone, 0, 0, std::vector<uint64_t>{});
+      if(allocated_zone == nullptr) {
         s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
-                                &allocated_zone, 1, 1);
-      
+                                &allocated_zone, 0, 1, std::vector<uint64_t>{});
+
         if (allocated_zone == nullptr) {  // try again, find the
           s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
-                                  &allocated_zone, 2, 1);
-          if(allocated_zone != nullptr) {
-            add_allocation(1, 2, new_lifetime, new_type, allocated_zone);
+                                  &allocated_zone, 1, 1, std::vector<uint64_t>{});
+        
+          if (allocated_zone == nullptr) {  // try again, find the
+            s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
+                                    &allocated_zone, 2, 1, std::vector<uint64_t>{});
+            if(allocated_zone != nullptr) {
+              add_allocation(1, 2, new_lifetime, new_type, allocated_zone);
+            }
+          } else {
+            add_allocation(1, 1, new_lifetime, new_type, allocated_zone);
           }
         } else {
-          add_allocation(1, 1, new_lifetime, new_type, allocated_zone);
+          add_allocation(1, 0, new_lifetime, new_type, allocated_zone);
         }
       } else {
-        add_allocation(1, 0, new_lifetime, new_type, allocated_zone);
+        add_allocation(0, 0, new_lifetime, new_type,allocated_zone);
       }
     } else {
-      add_allocation(0, 0, new_lifetime, new_type,allocated_zone);
+      add_allocation(0, 4, new_lifetime, new_type,allocated_zone);
     }
+
 
 
     
@@ -1188,8 +1198,11 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
         if(new_lifetime == 0) new_type = ((SHORT_THE == -1) ? 1 : 0);
         allocated_zone->lifetime_type = new_type;
         //if(new_lifetime < T)
-        //allocated_zone->min_lifetime = (new_lifetime < T ? 1: new_lifetime - T);
-        allocated_zone->min_lifetime = new_lifetime;
+        if(ENABLE_T_RANGE) {
+          allocated_zone->min_lifetime = (new_lifetime < T ? 1: new_lifetime - T);
+        } else {
+          allocated_zone->min_lifetime = new_lifetime;
+        }
         allocated_zone->max_lifetime = new_lifetime + T;
         printf("allocated_new_zone znoe_id=%ld l=%ld r=%ld lifetime_type=%d \n", allocated_zone->id, allocated_zone->min_lifetime, allocated_zone->max_lifetime, new_type);
         new_zone = true;

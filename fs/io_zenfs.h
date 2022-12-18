@@ -56,6 +56,7 @@ class ZoneFile {
   uint64_t zone_begin;
   uint64_t zone_id;
   std::string debug_fname;
+  std::vector<uint64_t> overlap_zone_list;
  private:
   const uint64_t NO_EXTENT = 0xffffffffffffffff;
 

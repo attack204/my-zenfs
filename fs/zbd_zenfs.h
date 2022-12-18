@@ -35,11 +35,13 @@ const int INF = 1e9;
 
 //true: use my algorithm
 //false: use default algorithm
-const bool MYMODE = true; 
+const bool MYMODE = false; 
 const int MAX_DIFFTIME = 0; //ALGO 2 3
-const int T = INF;
-const int CALC_RESET = 1;
-const int SHORT_THE = -1;
+const int T = 600;
+const int CALC_RESET = 0;
+const int ENABLE_T_RANGE = 1; //1 means [-T, T]
+const int SHORT_THE = 2;
+const int ENABLE_CAZA = 1;;
 
 
 
@@ -269,7 +271,7 @@ class ZonedBlockDevice {
 
   IOStatus AllocateIOZone(Env::WriteLifeTimeHint file_lifetime, IOType io_type,
                           Zone **out_zone);
-  IOStatus AllocateIOZone(Env::WriteLifeTimeHint file_lifetime, IOType io_type, Zone **out_zone, uint64_t new_lifetime, int new_type);
+  IOStatus AllocateIOZone(Env::WriteLifeTimeHint file_lifetime, IOType io_type, Zone **out_zone, uint64_t new_lifetime, int new_type, std::vector<uint64_t> overlap_zone_list);
   IOStatus AllocateMetaZone(Zone **out_meta_zone);
 
   uint64_t GetFreeSpace();
@@ -327,7 +329,7 @@ class ZonedBlockDevice {
                                 unsigned int *best_diff_out, Zone **zone_out,
                                 uint32_t min_capacity = 0);
   IOStatus GetBestOpenZoneMatch(uint64_t new_lifetime_, int new_type, Env::WriteLifeTimeHint file_lifetime,
-                              unsigned int *best_diff_out, Zone **zone_out, int flag, int flag2,
+                              unsigned int *best_diff_out, Zone **zone_out, int flag, int flag2, std::vector<uint64_t> overlap_list,
                               uint32_t min_capacity = 0);
   IOStatus AllocateEmptyZone(Zone **zone_out);
 };
