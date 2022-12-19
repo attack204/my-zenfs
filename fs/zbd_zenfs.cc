@@ -118,7 +118,9 @@ void Zone::EncodeJson(std::ostream &json_stream) {
   json_stream << "}";
 }
 
-IOStatus Zone::Reset() {  // 注意Reset接口，GC的时候肯定要调用Reset
+IOStatus Zone::Reset() {  
+
+  printf("Zone Reset zone_id=%ld capacity=%ld\n", id, capacity_);
   bool offline;
   uint64_t max_capacity;
 
@@ -145,7 +147,9 @@ IOStatus Zone::Finish() {
 
   IOStatus ios = zbd_be_->Finish(start_);
   if (ios != IOStatus::OK()) return ios;
-
+  if(CALC_RESET) {
+    write_size_calc += capacity_;
+  }
   capacity_ = 0;
   wp_ = start_ + zbd_->GetZoneSize();
 
@@ -332,7 +336,10 @@ uint64_t ZonedBlockDevice::GetUsedSpace() {
 uint64_t ZonedBlockDevice::GetReclaimableSpace() {
   uint64_t reclaimable = 0;
   for (const auto z : io_zones) {
-    if (z->IsFull()) reclaimable += (z->max_capacity_ - z->used_capacity_);
+    if (z->IsFull()) {
+      reclaimable += (z->max_capacity_ - z->used_capacity_);
+      printf("GetReclaimableSpace id=%ld max_cap=%ld used=%ld reclaimable=%ld\n", z->id, z->max_capacity_, z->used_capacity_.load(), reclaimable);
+    }
   }
   return reclaimable;
 }
@@ -493,9 +500,6 @@ IOStatus ZonedBlockDevice::ResetUnusedIOZones() {
         z->id, z->start_ + z->max_capacity_ - z-> wp_, z->start_, z->IsEmpty(), z->capacity_, z->used_capacity_.load(), z->lifetime_, z->min_lifetime, z->max_lifetime);
         bool full = z->IsFull();
         IOStatus reset_status = z->Reset();
-        if(CALC_RESET) {
-          write_size_calc += z->capacity_;
-        }
         reset_zone_num++;
         z->prediction_lifetime_list.clear();
         z->lifetime_list.clear();
@@ -523,9 +527,6 @@ IOStatus ZonedBlockDevice::MyResetUnusedIOZones() {
         IOStatus reset_status = z->Reset();
         reset_zone_num++;
         z->prediction_lifetime_list.clear();
-        if(CALC_RESET) {
-          write_size_calc += z->capacity_;
-        }
         z->lifetime_list.clear();
         z->hint_num.clear();
         IOStatus release_status = z->CheckRelease();
@@ -542,19 +543,14 @@ IOStatus ZonedBlockDevice::MyResetUnusedIOZones() {
 }
 
 IOStatus ZonedBlockDevice::ResetTartetUnusedIOZones(uint64_t id) {
-  bool success = 0;
   for (const auto z : io_zones) {
     if (z->Acquire()) {
       if (!z->IsEmpty() && !z->IsUsed() && z->id == id) {
-        success = 1;
         printf("Reset zone_id=%ld padding=%ld start=%ld max_capacity=%ld wp=%ld is_empty()=%d capacity=%ld used_capacity=%ld HINT=%d L=%ld R=%ld\n", 
         z->id, z->start_ + z->max_capacity_ - z-> wp_, z->start_, z->max_capacity_, z-> wp_, z->IsEmpty(), z->capacity_, z->used_capacity_.load(), z->lifetime_, z->min_lifetime, z->max_lifetime);
         bool full = z->IsFull();
         IOStatus reset_status = z->Reset();
         z->prediction_lifetime_list.clear();
-        if(CALC_RESET) {
-          write_size_calc += z->capacity_;
-        }
         z->lifetime_list.clear();
         z->hint_num.clear();
         reset_zone_num++;
@@ -564,13 +560,14 @@ IOStatus ZonedBlockDevice::ResetTartetUnusedIOZones(uint64_t id) {
         if (!full) PutActiveIOZoneToken();
       } else {
         IOStatus release_status = z->CheckRelease();
+        if(z->id == id) {
+          printf("ResetTargetIOZoneFail id=%ld IsEmpty()=%d IsUsed=%ld\n", id, z->IsEmpty(), z->used_capacity_.load());
+        }
         if (!release_status.ok()) return release_status;
       }
     }
   }
-  if(!success) {
-    printf("ResetTargetIOZoneFail id=%ld", id);
-  }
+
   return IOStatus::OK();
 }
 
@@ -690,7 +687,7 @@ IOStatus ZonedBlockDevice::FinishCheapestIOZone() {
     Info(logger_, "All non-busy zones are empty or full, skip.");
     return IOStatus::OK();
   }
-
+  printf("finish_victim zone_id=%ld zone_capacity=%ld used=%ld\n", finish_victim->id, finish_victim->capacity_, finish_victim->used_capacity_.load());
   s = finish_victim->Finish();
   IOStatus release_status = finish_victim->CheckRelease();
 

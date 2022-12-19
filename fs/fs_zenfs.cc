@@ -381,22 +381,24 @@ void ZenFS::MyGCWorker() {
         migrate_zones_start.emplace(zone.start);
         migrate_size += zone.used_capacity;
         migrate_file_num += file_list.size();
-         if(ENABLE_PRECOMPACTION && DoPreCompaction(file_list)) {
-          printf("DoPreCompaction is True zone_id=%ld file_list.size()=%ld\n", zone.id, file_list.size());
-          for (auto& x : file_list_all) {
-            ZoneFile& file = *x;
-            printf("file_id=%ld lifetime=%ld\n", file.GetID(), file.new_lifetime);
-          }
-          puts("");
-          migrate_zones_start.emplace(zone.start);
-          PreCompaction = 1;
-          Status s = zbd_->ResetTartetUnusedIOZones(zone.id);
-          if(!s.ok()) {
-            printf("ERROR: ResetZoneIn PreCompaction");
-          }
-        } else if(ENABLE_PRECOMPACTION) {
-          printf("DoPreCompaction is False\n");
-          migrate_zones_start.emplace(zone.start);
+        if(ENABLE_PRECOMPACTION && zone.used_capacity != 0 && file_list.size() != 0) {
+          if( DoPreCompaction(file_list)) {
+            printf("DoPreCompaction is True zone_id=%ld file_list.size()=%ld\n", zone.id, file_list.size());
+            for (auto& x : file_list_all) {
+              ZoneFile& file = *x;
+              printf("file_id=%ld lifetime=%ld\n", file.GetID(), file.new_lifetime);
+            }
+            puts("");
+            migrate_zones_start.emplace(zone.start);
+            PreCompaction = 1;
+            Status s = zbd_->ResetTartetUnusedIOZones(zone.id);
+            if(!s.ok()) {
+              printf("ERROR: ResetZoneIn PreCompaction");
+            }  
+          } else {
+            printf("DoPreCompaction is False\n");
+            migrate_zones_start.emplace(zone.start);
+          } 
         }
         zone_file_list[zone.start].clear();
         zone_file_list_all[zone.start].clear();
