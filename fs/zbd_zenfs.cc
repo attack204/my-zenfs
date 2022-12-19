@@ -542,11 +542,13 @@ IOStatus ZonedBlockDevice::MyResetUnusedIOZones() {
 }
 
 IOStatus ZonedBlockDevice::ResetTartetUnusedIOZones(uint64_t id) {
+  bool success = 0;
   for (const auto z : io_zones) {
     if (z->Acquire()) {
       if (!z->IsEmpty() && !z->IsUsed() && z->id == id) {
-        printf("Reset zone_id=%ld padding=%ld zone_start=%ld is_empty()=%d capacity=%ld used_capacity=%ld HINT=%d L=%ld R=%ld\n", 
-        z->id, z->start_ + z->max_capacity_ - z-> wp_, z->start_, z->IsEmpty(), z->capacity_, z->used_capacity_.load(), z->lifetime_, z->min_lifetime, z->max_lifetime);
+        success = 1;
+        printf("Reset zone_id=%ld padding=%ld start=%ld max_capacity=%ld wp=%ld is_empty()=%d capacity=%ld used_capacity=%ld HINT=%d L=%ld R=%ld\n", 
+        z->id, z->start_ + z->max_capacity_ - z-> wp_, z->start_, z->max_capacity_, z-> wp_, z->IsEmpty(), z->capacity_, z->used_capacity_.load(), z->lifetime_, z->min_lifetime, z->max_lifetime);
         bool full = z->IsFull();
         IOStatus reset_status = z->Reset();
         z->prediction_lifetime_list.clear();
@@ -565,6 +567,9 @@ IOStatus ZonedBlockDevice::ResetTartetUnusedIOZones(uint64_t id) {
         if (!release_status.ok()) return release_status;
       }
     }
+  }
+  if(!success) {
+    printf("ResetTargetIOZoneFail id=%ld", id);
   }
   return IOStatus::OK();
 }
@@ -766,9 +771,9 @@ IOStatus ZonedBlockDevice::GetBestOpenZoneMatch(
         if ((z->used_capacity_ > 0) && !z->IsFull() &&
             z->capacity_ >= min_capacity) {
           printf(
-              "GetBestOpenZoneMatch Overlap zone_id=%ld new_lifetime_=%ld new_type=%d "
+              "GetBestOpenZoneMatch Overlap zone_id=%ld new_lifetime_=%ld file_hint=%d new_type=%d "
               "min_lifetime=%ld max_lifetime=%ld zone_type=%d global_clock=%d flag=%d flag2=%d overlap_list.size()=%ld\n",
-              z->id, new_lifetime_, new_type, z->min_lifetime, z->max_lifetime, z->lifetime_type,
+              z->id, new_lifetime_, file_lifetime, new_type, z->min_lifetime, z->max_lifetime, z->lifetime_type,
               global_clock, flag, flag2, overlap_zone_list.size());
             if (allocated_zone != nullptr) {  // flag == 1 need to find the maximal max_lifetime
               s = allocated_zone->CheckRelease();
