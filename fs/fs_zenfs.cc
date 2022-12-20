@@ -295,6 +295,7 @@ const int SLEEP_TIME = 1000 * 1000;
 const int MB = 1024 * 1024;
 int reset_zone_num = 0;
 int allocated_zone_num = 0;
+int pre_compaction_num;
 uint64_t total_file_num = 0;
 uint64_t total_size = 0;
 uint64_t total_extents = 0;
@@ -383,7 +384,8 @@ void ZenFS::MyGCWorker() {
         migrate_file_num += file_list.size();
         if(ENABLE_PRECOMPACTION && zone.used_capacity != 0 && file_list.size() != 0) {
           if( DoPreCompaction(file_list)) {
-            printf("DoPreCompaction is True zone_id=%ld file_list.size()=%ld\n", zone.id, file_list.size());
+            pre_compaction_num++;
+            printf("DoPreCompaction %d zone_id=%ld file_list.size()=%ld\n", pre_compaction_num, zone.id, file_list.size());
             for (auto& x : file_list_all) {
               ZoneFile& file = *x;
               printf("file_id=%ld lifetime=%ld\n", file.GetID(), file.new_lifetime);
