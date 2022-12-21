@@ -38,20 +38,22 @@ const int INF = 1e9;
 const bool MYMODE = false; 
 const int ENABLE_PRECOMPACTION = 0;
 
-const uint64_t GC_START_LEVEL = 80;                   
-const uint64_t GC_STOP_LEVEL = 90;
+const uint64_t GC_START_LEVEL = 30;                   
+const uint64_t GC_STOP_LEVEL = 60;
 const bool DISABLE_RESET = true;
 
 
 const int SHORT_THE = 2;
-const int ENABLE_CAZA = 0;
 const int MAX_DIFFTIME = 0; //ALGO 2 3
 const int T = INF;
 const int ENABLE_T_RANGE = 1; //1 means [-T, T]
 
-const int ZoneNumber = 100;
+const int ZoneNumber = 200;
 
 
+
+
+const int ENABLE_CAZA = 0;
 //Test wp
 const int CALC_RESET = 1;
 const int K = 1; //gc top k
