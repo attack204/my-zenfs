@@ -402,13 +402,16 @@ void ZenFS::MyGCWorker() {
           printf("Case 2 gced before %d\n", ++case2);
           control_flag = 1;
         }
-        else if(static_cast<double>(zone.used_capacity / zone.max_capacity) <= GC_THRESHOLD){
-          printf("Case 3 GC %d\n", ++case3);
+        else if(1.0 * zone.used_capacity / zone.max_capacity <= GC_THRESHOLD){
+          printf("Case 3 GC %d %lf\n", ++case3, 1.0 * zone.used_capacity / zone.max_capacity);
           control_flag = 0;
         } else {
           printf("Case 4 Compensation %d\n", ++case4);
           control_flag = 1;
         }
+        printf("FileList: ");
+        for(auto &x: file_list) printf("%ld ", x);
+        puts("");
         if(ENABLE_PRECOMPACTION && zone.used_capacity != 0 && file_list.size() != 0 && control_flag == 1) {
           if( DoPreCompaction(file_list)) {
             pre_compaction_num++;
