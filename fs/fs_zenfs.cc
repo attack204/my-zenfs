@@ -400,7 +400,7 @@ void ZenFS::MyGCWorker() {
           printf("Case 2 gced before %d", ++case2);
           control_flag = 1;
         }
-        else if(ENABLE_CASE3 && static_cast<double>(zone.used_capacity / zone.max_capacity) <= GC_THRESHOLD){
+        else if(static_cast<double>(zone.used_capacity / zone.max_capacity) <= GC_THRESHOLD){
           printf("Case 3 GC %d", ++case3);
           control_flag = 0;
         } else {
