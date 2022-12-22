@@ -300,7 +300,7 @@ uint64_t total_file_num = 0;
 uint64_t total_size = 0;
 uint64_t total_extents = 0;
 int case1 = 0, case2 = 0, case3 = 0, case4 = 0;
-bool check_gced(std::vector<uint64_t> &file_list) {
+bool check_gced(std::vector<uint64_t> &file_list, std::map<int64_t, int> &has_migrated) {
   for(auto &x: file_list) {
     if((!has_migrated.empty())  && has_migrated.find(x) != has_migrated.end()) {
       return 1;
@@ -311,7 +311,7 @@ bool check_gced(std::vector<uint64_t> &file_list) {
 void ZenFS::MyGCWorker() {
   uint32_t gc_times = 0;
   uint32_t running = 0;
-  std::map<uint64_t, int> has_migrated;
+  std::map<int64_t, int> has_migrated;
   while (run_gc_worker_) {
     set_write_amplification(1.0 * write_size_calc / GetIOSTATS());
     set_write_amplification_no_set(1.0 * write_size_calc_no_reset / GetIOSTATS());
@@ -396,7 +396,7 @@ void ZenFS::MyGCWorker() {
         if(ENABLE_CASE1 && get_bg_compaction_scheduled_() == 0) {
           printf("Case1 no compaction %d\n", ++case1);
           control_flag = 1;
-        } else if(ENABLE_CASE2 && check_gced(file_list)) {
+        } else if(ENABLE_CASE2 && check_gced(file_list, has_migrated)) {
           printf("Case 2 gced before %d\n", ++case2);
           control_flag = 1;
         }
