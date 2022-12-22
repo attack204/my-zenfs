@@ -300,10 +300,9 @@ uint64_t total_file_num = 0;
 uint64_t total_size = 0;
 uint64_t total_extents = 0;
 int case1 = 0, case2 = 0, case3 = 0, case4 = 0;
-std::map<uint64_t, int> has_migrated;
 bool check_gced(std::vector<uint64_t> &file_list) {
   for(auto &x: file_list) {
-    if(has_migrated.find(x) != has_migrated.end()) {
+    if((!has_migrated.empty())  && has_migrated.find(x) != has_migrated.end()) {
       return 1;
     }
   }
@@ -312,6 +311,7 @@ bool check_gced(std::vector<uint64_t> &file_list) {
 void ZenFS::MyGCWorker() {
   uint32_t gc_times = 0;
   uint32_t running = 0;
+  std::map<uint64_t, int> has_migrated;
   while (run_gc_worker_) {
     set_write_amplification(1.0 * write_size_calc / GetIOSTATS());
     set_write_amplification_no_set(1.0 * write_size_calc_no_reset / GetIOSTATS());
@@ -440,7 +440,7 @@ void ZenFS::MyGCWorker() {
         if(!PreCompaction) {
           
           for(auto &x: file_list) {
-            if(has_migrated.find(x) != has_migrated.end()) {
+            if((!has_migrated.empty()) && has_migrated.find(x) != has_migrated.end()) {
               printf("file=%ld has been migrated in time=%d\n", x, has_migrated[x]);
             } else {
               has_migrated[x] = gc_times;
@@ -467,8 +467,6 @@ void ZenFS::MyGCWorker() {
       total_size += migrate_size;
       total_extents += migrate_exts.size();
       printf("GC Begin %d clock=%d ", ++gc_times, get_clock());
-     // for(auto &x: greedy_zone_id) printf("%ld ", x);
-     // printf("] ");
       printf(
           "zone_size=%ld  "
           "total_extents=%ld total_file_num=%ld total_size=%ld free=%ld " 
