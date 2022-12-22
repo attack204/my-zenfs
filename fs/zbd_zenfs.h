@@ -36,10 +36,10 @@ const int INF = 1e9;
 //true: use my algorithm
 //false: use default algorithm
 const bool MYMODE = false; 
-const int ENABLE_PRECOMPACTION = 0;
+const int ENABLE_PRECOMPACTION = 1; 
 
-const uint64_t GC_START_LEVEL = 30;                   
-const uint64_t GC_STOP_LEVEL = 60;
+const uint64_t GC_START_LEVEL = 85;                   
+const uint64_t GC_STOP_LEVEL = 95;
 const bool DISABLE_RESET = true;
 
 

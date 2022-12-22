@@ -42,7 +42,7 @@ namespace ROCKSDB_NAMESPACE {
 extern uint64_t GetIOSTATS();
 
 extern bool DoPreCompaction(std::vector<uint64_t> file_list);
-
+extern int get_bg_compaction_scheduled_();
 extern void set_write_amplification(double wp);
 extern void set_write_amplification_no_set(double wp);
 extern void set_reset_num(int reset_num);
@@ -380,9 +380,17 @@ void ZenFS::MyGCWorker() {
       if (zone.capacity == 0 && zone.lifetime_ != 0) {
 
         migrate_zones_start.emplace(zone.start);
-        migrate_size += zone.used_capacity;
-        migrate_file_num += file_list.size();
-        if(ENABLE_PRECOMPACTION && zone.used_capacity != 0 && file_list.size() != 0) {
+        
+        bool control_flag;
+        printf("zone.max_capacity=%ld", zone.max_capacity);
+        if(get_bg_compaction_scheduled_() == 0) {
+          control_flag = 1;
+        } else if(static_cast<double>(zone.used_capacity / zone.max_capacity) < 0.125){
+          control_flag = 0;
+        } else {
+          control_flag = 0;
+        }
+        if(ENABLE_PRECOMPACTION && zone.used_capacity != 0 && file_list.size() != 0 && control_flag == 1) {
           if( DoPreCompaction(file_list)) {
             pre_compaction_num++;
             printf("DoPreCompaction %d zone_id=%ld file_list.size()=%ld\n", pre_compaction_num, zone.id, file_list.size());
@@ -412,6 +420,10 @@ void ZenFS::MyGCWorker() {
         hint_num_v.emplace_back(zone.hint_num);
         prediction_lifetime_list_v.emplace_back(zone.prediction_lifetime_list);
         tot++;
+        if(!PreCompaction) {
+          migrate_size += zone.used_capacity;
+          migrate_file_num += file_list.size();
+        }
         if (tot == K) break;
       }
     }
