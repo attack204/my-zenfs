@@ -394,17 +394,17 @@ void ZenFS::MyGCWorker() {
         bool control_flag;
        // printf("zone.max_capacity=%ld", zone.max_capacity);
         if(ENABLE_CASE1 && get_bg_compaction_scheduled_() == 0) {
-          printf("Case1 no compaction %d", ++case1);
+          printf("Case1 no compaction %d\n", ++case1);
           control_flag = 1;
         } else if(ENABLE_CASE2 && check_gced(file_list)) {
-          printf("Case 2 gced before %d", ++case2);
+          printf("Case 2 gced before %d\n", ++case2);
           control_flag = 1;
         }
         else if(static_cast<double>(zone.used_capacity / zone.max_capacity) <= GC_THRESHOLD){
-          printf("Case 3 GC %d", ++case3);
+          printf("Case 3 GC %d\n", ++case3);
           control_flag = 0;
         } else {
-          printf("Case 4 Compensation %d", ++case4);
+          printf("Case 4 Compensation %d\n", ++case4);
           control_flag = 1;
         }
         if(ENABLE_PRECOMPACTION && zone.used_capacity != 0 && file_list.size() != 0 && control_flag == 1) {
@@ -473,11 +473,11 @@ void ZenFS::MyGCWorker() {
           "zone_size=%ld  "
           "total_extents=%ld total_file_num=%ld total_size=%ld free=%ld " 
           "drive_io=%ld rocks_io=%ld write_amp=%.2lf " 
-          "reset_zone_num=%d migrate_exts=%ld migrate_file_num=%ld migrate_size=%ld\n",
+          "reset_zone_num=%d migrate_exts=%ld migrate_file_num=%ld migrate_size=%ld case1=%d case2=%d case3=%d case4=%d\n",
           migrate_zones_start.size(), 
           total_extents, total_file_num, total_size / MB, zbd_->GetFreeSpace(), 
           write_size_calc, GetIOSTATS(), 1.0 * write_size_calc / GetIOSTATS(), 
-          reset_zone_num, migrate_exts.size(), migrate_file_num, migrate_size / MB);
+          reset_zone_num, migrate_exts.size(), migrate_file_num, migrate_size / MB, case1, case2, case3, case4);
 
 
       for(uint64_t i = 0; i < greedy_zone_id.size(); i++) {
