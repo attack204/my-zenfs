@@ -299,7 +299,7 @@ int pre_compaction_num;
 uint64_t total_file_num = 0;
 uint64_t total_size = 0;
 uint64_t total_extents = 0;
-int case1 = 0, case2 = 0, case3 = 0, case4 = 0;
+int case0 = 0, case1 = 0, case2 = 0, case3 = 0, case4 = 0;
 bool check_gced(std::vector<uint64_t> &file_list, std::map<int64_t, int> &has_migrated) {
   for(auto &x: file_list) {
     if((!has_migrated.empty())  && has_migrated.find(x) != has_migrated.end()) {
@@ -394,7 +394,9 @@ void ZenFS::MyGCWorker() {
         bool control_flag;
        // printf("zone.max_capacity=%ld", zone.max_capacity);
         if(zone.used_capacity == 0) {
+          printf("Case0 used capactiy = 0 %d\n", ++case0);
           control_flag = 0;
+
         } else if(ENABLE_CASE1 && get_bg_compaction_scheduled_() == 0) {
           printf("Case1 no compaction %d\n", ++case1);
           control_flag = 1;
@@ -406,10 +408,10 @@ void ZenFS::MyGCWorker() {
           printf("Case 3 GC %d %lf\n", ++case3, 1.0 * zone.used_capacity / zone.max_capacity);
           control_flag = 0;
         } else {
-          printf("Case 4 Compensation %d\n", ++case4);
+          printf("Case 4 Compensation %d %lf\n", ++case4, 1.0 * zone.used_capacity / zone.max_capacity);
           control_flag = 1;
         }
-        printf("FileList: ");
+        printf("PreCompaction FileList: ");
         for(auto &x: file_list) printf("%ld ", x);
         puts("");
         if(ENABLE_PRECOMPACTION && zone.used_capacity != 0 && file_list.size() != 0 && control_flag == 1) {

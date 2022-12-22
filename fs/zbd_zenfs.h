@@ -40,10 +40,10 @@ const bool MYMODE = false;
 
 const int ENABLE_PRECOMPACTION = 1; 
 //all compensation
-// const int GC_THRESHOLD = 0;//0: no GC 1: all GC
+const double GC_THRESHOLD = 0;//0: no GC 1: all GC
 
 //all GC
- const int GC_THRESHOLD = 0;//0: no GC 1: all GC
+ //const double GC_THRESHOLD = 0;//0: no GC 1: all GC
  const int ENABLE_CASE1 = 0;
  const int ENABLE_CASE2 = 0;
 
