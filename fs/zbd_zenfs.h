@@ -39,9 +39,15 @@ const bool MYMODE = false;
 
 
 const int ENABLE_PRECOMPACTION = 1; 
-const int GC_THRESHOLD = 0.125;//0: no GC 1: all GC
-const int ENABLE_CASE1 = 1;
-const int ENABLE_CASE2 = 1;
+//all compensation
+// const int GC_THRESHOLD = 0;//0: no GC 1: all GC
+
+//all GC
+// const int GC_THRESHOLD = 1;//0: no GC 1: all GC
+// const int ENABLE_CASE1 = 0;
+// const int ENABLE_CASE2 = 0;
+
+
 
 const uint64_t GC_START_LEVEL = 85;                   
 const uint64_t GC_STOP_LEVEL = 95;

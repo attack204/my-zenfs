@@ -393,7 +393,9 @@ void ZenFS::MyGCWorker() {
         
         bool control_flag;
        // printf("zone.max_capacity=%ld", zone.max_capacity);
-        if(ENABLE_CASE1 && get_bg_compaction_scheduled_() == 0) {
+        if(zone.used_capacity == 0) {
+          control_flag = 0;
+        } else if(ENABLE_CASE1 && get_bg_compaction_scheduled_() == 0) {
           printf("Case1 no compaction %d\n", ++case1);
           control_flag = 1;
         } else if(ENABLE_CASE2 && check_gced(file_list, has_migrated)) {
