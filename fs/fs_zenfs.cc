@@ -299,6 +299,7 @@ int pre_compaction_num;
 uint64_t total_file_num = 0;
 uint64_t total_size = 0;
 uint64_t total_extents = 0;
+std::map<uint64_t, bool> has_migrated;
 void ZenFS::MyGCWorker() {
   uint32_t gc_times = 0;
   uint32_t running = 0;
@@ -374,15 +375,15 @@ void ZenFS::MyGCWorker() {
 
     bool PreCompaction = 0;
     for (const auto& zone : snapshot.zones_) {
-      std::vector<uint64_t>& file_list = zone_file_list[zone.start];
+      std::vector<uint64_t> file_list = zone_file_list[zone.start];
       std::vector<std::shared_ptr<ZoneFile>>& file_list_all = zone_file_list_all[zone.start];
 
       if (zone.capacity == 0 && zone.lifetime_ != 0) {
-
+        
         migrate_zones_start.emplace(zone.start);
         
         bool control_flag;
-        printf("zone.max_capacity=%ld", zone.max_capacity);
+       // printf("zone.max_capacity=%ld", zone.max_capacity);
         if(get_bg_compaction_scheduled_() == 0) {
           control_flag = 1;
         } else if(static_cast<double>(zone.used_capacity / zone.max_capacity) < 0.125){
@@ -421,6 +422,14 @@ void ZenFS::MyGCWorker() {
         prediction_lifetime_list_v.emplace_back(zone.prediction_lifetime_list);
         tot++;
         if(!PreCompaction) {
+          
+          for(auto &x: file_list) {
+            if(has_migrated[x]) {
+              printf("file=%ld has been migrated in time=%d\n", x, has_migrated[x]);
+            } else {
+              has_migrated[x] = gc_times;
+            }
+          }
           migrate_size += zone.used_capacity;
           migrate_file_num += file_list.size();
         }
