@@ -36,23 +36,26 @@ const int INF = 1e9;
 //true: use my algorithm
 //false: use default algorithm
 const bool MYMODE = false; 
+
+
 const int ENABLE_PRECOMPACTION = 1; 
+const int GC_THRESHOLD = 0.125;
+const int ENABLE_CASE1 = 1;
+const int ENABLE_CASE2 = 1;
+const int ENABLE_CASE3 = 1;
 
 const uint64_t GC_START_LEVEL = 85;                   
 const uint64_t GC_STOP_LEVEL = 95;
 const bool DISABLE_RESET = true;
-
 
 const int SHORT_THE = 2;
 const int MAX_DIFFTIME = 0; //ALGO 2 3
 const int T = INF;
 const int ENABLE_T_RANGE = 1; //1 means [-T, T]
 
+
+
 const int ZoneNumber = 200;
-
-
-
-
 const int ENABLE_CAZA = 0;
 //Test wp
 const int CALC_RESET = 1;
