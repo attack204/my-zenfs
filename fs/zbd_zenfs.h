@@ -38,9 +38,9 @@ const int INF = 1e9;
 const bool MYMODE = false; 
 
 
-const int ENABLE_PRECOMPACTION = 1; 
+const int ENABLE_PRECOMPACTION = 0; 
 //all compensation
-const double GC_THRESHOLD = 0;//0: no GC 1: all GC
+const double GC_THRESHOLD = 1;//0: no GC 1: all GC
 
 //all GC
  //const double GC_THRESHOLD = 0;//0: no GC 1: all GC
@@ -51,7 +51,6 @@ const double GC_THRESHOLD = 0;//0: no GC 1: all GC
 
 const uint64_t GC_START_LEVEL = 85;                   
 const uint64_t GC_STOP_LEVEL = 95;
-const bool DISABLE_RESET = true;
 
 const int SHORT_THE = 2;
 const int MAX_DIFFTIME = 0; //ALGO 2 3
@@ -60,6 +59,8 @@ const int ENABLE_T_RANGE = 1; //1 means [-T, T]
 
 
 
+
+const bool DISABLE_RESET = true;
 const int ZoneNumber = 200;
 const int ENABLE_CAZA = 0;
 //Test wp
