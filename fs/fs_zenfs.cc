@@ -482,7 +482,7 @@ void ZenFS::MyGCWorker() {
           migrate_zones_start.size(), 
           total_extents, total_file_num, total_size / MB, zbd_->GetFreeSpace(), 
           write_size_calc, GetIOSTATS(), 1.0 * write_size_calc / GetIOSTATS(), 
-          reset_zone_num, migrate_exts.size(), migrate_file_num, migrate_size / MB, case0=%d, case1, case2, case3, case4);
+          reset_zone_num, migrate_exts.size(), migrate_file_num, migrate_size / MB, case0, case1, case2, case3, case4);
 
 
       for(uint64_t i = 0; i < greedy_zone_id.size(); i++) {
