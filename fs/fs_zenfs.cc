@@ -908,6 +908,7 @@ IOStatus ZenFS::SetFileLifetime(std::string fname, uint64_t lifetime,
     if (!flag) {
       tmp->new_lifetime = lifetime;
       tmp->new_type = (level <= SHORT_THE) ? 0 : 1;
+      tmp->level = level;
       if (tmp->GetActiveZone() != NULL) {
         printf("ERROR: ZoneFile has actived file_id=%ld zone_id=%ld\n",
                tmp->GetID(), tmp->GetActiveZone()->id);

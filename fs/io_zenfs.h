@@ -52,6 +52,7 @@ class ZoneFile {
  public:
   uint64_t new_lifetime = 0;
   int new_type;
+  int level;
 
   uint64_t zone_begin;
   uint64_t zone_id;

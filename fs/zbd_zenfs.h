@@ -285,7 +285,7 @@ class ZonedBlockDevice {
 
   IOStatus AllocateIOZone(Env::WriteLifeTimeHint file_lifetime, IOType io_type,
                           Zone **out_zone);
-  IOStatus AllocateIOZone(Env::WriteLifeTimeHint file_lifetime, IOType io_type, Zone **out_zone, uint64_t new_lifetime, int new_type, std::vector<uint64_t> overlap_zone_list);
+  IOStatus AllocateIOZone(Env::WriteLifeTimeHint file_lifetime, IOType io_type, Zone **out_zone, uint64_t new_lifetime, int new_type, std::vector<uint64_t> overlap_zone_list, int level);
   IOStatus AllocateMetaZone(Zone **out_meta_zone);
 
   uint64_t GetFreeSpace();

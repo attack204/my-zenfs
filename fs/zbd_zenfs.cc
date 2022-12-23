@@ -1069,7 +1069,7 @@ IOStatus ZonedBlockDevice::TakeMigrateZone(Zone **out_zone,
 
 IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
                                           IOType io_type, Zone **out_zone,
-                                          uint64_t new_lifetime, int new_type, std::vector<uint64_t> overlap_zone_list) {
+                                          uint64_t new_lifetime, int new_type, std::vector<uint64_t> overlap_zone_list, int level) {
   printf("AllocateIOZone Begin\n");
   Zone *allocated_zone = nullptr;
   unsigned int best_diff = LIFETIME_DIFF_NOT_GOOD;
@@ -1214,7 +1214,9 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
         } else {
           allocated_zone->min_lifetime = new_lifetime;
         }
-        allocated_zone->max_lifetime = new_lifetime + T;
+        int base = T;
+        for(int i = 1; i <= level - 3; i++) base = base * 4;
+        allocated_zone->max_lifetime = new_lifetime + base;
         printf("allocated_new_zone znoe_id=%ld l=%ld r=%ld HINT=%d new_type=%d \n", allocated_zone->id, allocated_zone->min_lifetime, allocated_zone->max_lifetime, file_lifetime, new_type);
         new_zone = true;
         add_allocation_off(3, file_lifetime, allocated_zone);
