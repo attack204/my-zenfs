@@ -478,11 +478,11 @@ void ZenFS::MyGCWorker() {
           "zone_size=%ld  "
           "total_extents=%ld total_file_num=%ld total_size=%ld free=%ld " 
           "drive_io=%ld rocks_io=%ld write_amp=%.2lf " 
-          "reset_zone_num=%d migrate_exts=%ld migrate_file_num=%ld migrate_size=%ld case1=%d case2=%d case3=%d case4=%d\n",
+          "reset_zone_num=%d migrate_exts=%ld migrate_file_num=%ld migrate_size=%ld case0=%d case1=%d case2=%d case3=%d case4=%d\n",
           migrate_zones_start.size(), 
           total_extents, total_file_num, total_size / MB, zbd_->GetFreeSpace(), 
           write_size_calc, GetIOSTATS(), 1.0 * write_size_calc / GetIOSTATS(), 
-          reset_zone_num, migrate_exts.size(), migrate_file_num, migrate_size / MB, case1, case2, case3, case4);
+          reset_zone_num, migrate_exts.size(), migrate_file_num, migrate_size / MB, case0=%d, case1, case2, case3, case4);
 
 
       for(uint64_t i = 0; i < greedy_zone_id.size(); i++) {
