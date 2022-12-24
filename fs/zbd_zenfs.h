@@ -35,7 +35,7 @@ const int INF = 1e9;
 
 //true: use my algorithm
 //false: use default algorithm
-const bool MYMODE = false; 
+const bool MYMODE = true; 
 
 
 const int ENABLE_PRECOMPACTION = 0; 
