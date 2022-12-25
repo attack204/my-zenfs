@@ -22,6 +22,9 @@
 #include <stdio.h>
 #include <stdlib.h>
  
+#include <sys/types.h>
+#include <sys/syscall.h> /*必须引用这个文件 */
+
 #include <iostream>
 #include <string>
 #include <utility>
@@ -454,6 +457,11 @@ void ZoneFile::PushExtent() {
   active_zone_->used_capacity_ += length;
   extent_start_ = active_zone_->wp_;
   extent_filepos_ = file_size_;
+}
+
+pid_t gettid(void)
+{
+	return syscall(SYS_gettid);
 }
 
 

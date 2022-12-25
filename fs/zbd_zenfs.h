@@ -53,9 +53,9 @@ const uint64_t GC_START_LEVEL = 30;
 const uint64_t GC_STOP_LEVEL = 70;
 
 const int SHORT_THE = 2;
-const int MAX_DIFFTIME = 0; //ALGO 2 3
-const int T = INF;
-const int ENABLE_T_RANGE = 1; //1 means [-T, T]
+const int MAX_DIFFTIME = INF; //ALGO 2 3
+const int T = 100;
+const int ENABLE_T_RANGE = 0; //1 means [-T, T]
 
 
 
@@ -283,8 +283,6 @@ class ZonedBlockDevice {
 
   Zone *GetIOZone(uint64_t offset);
 
-  IOStatus AllocateIOZone(Env::WriteLifeTimeHint file_lifetime, IOType io_type,
-                          Zone **out_zone);
   IOStatus AllocateIOZone(Env::WriteLifeTimeHint file_lifetime, IOType io_type, Zone **out_zone, uint64_t new_lifetime, int new_type, std::vector<uint64_t> overlap_zone_list, int level);
   IOStatus AllocateMetaZone(Zone **out_meta_zone);
 
@@ -339,6 +337,7 @@ class ZonedBlockDevice {
   void WaitForOpenIOZoneToken(bool prioritized);
   IOStatus ApplyFinishThreshold();
   IOStatus FinishCheapestIOZone();
+  void OpenNewZone(Zone **out_zone, Env::WriteLifeTimeHint file_lifetime, uint64_t new_lifetime, int new_type, int level);
   IOStatus GetBestOpenZoneMatch(Env::WriteLifeTimeHint file_lifetime,
                                 unsigned int *best_diff_out, Zone **zone_out,
                                 uint32_t min_capacity = 0);
