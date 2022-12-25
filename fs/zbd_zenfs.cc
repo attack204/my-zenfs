@@ -794,6 +794,8 @@ IOStatus ZonedBlockDevice::GetBestOpenZoneMatch(
   }
   else {
     for (const auto z : io_zones) {
+      printf("zone test zone_id=%ld zone_cap=%ld valid=%ld type=%d min_lifetime=%ld max_lifetime=%ld is_busy=%d\n", z->id, z->capacity_, z->used_capacity_.load(), z->lifetime_type, z->min_lifetime, z->max_lifetime, z->IsBusy());
+      
       if (z->Acquire()) {
         if ((z->used_capacity_ > 0) && !z->IsFull() &&
             z->capacity_ >= min_capacity) {
@@ -807,8 +809,8 @@ IOStatus ZonedBlockDevice::GetBestOpenZoneMatch(
           if( (new_type == 0 && z->lifetime_type == 0 && flag2 == 0) 
               ||
                 (
-                ((new_type == 0 && z->lifetime_type == 1 && flag2 == 1) || (new_type == 1 && z->lifetime_type == 1 && flag2 == 1)) 
-                && 
+                //((new_type == 0 && z->lifetime_type == 1 && flag2 == 1) || (new_type == 1 && z->lifetime_type == 1 && flag2 == 1)) 
+                //&& 
                 (
                   (flag == 0 && (new_lifetime_ >= z->min_lifetime) && (new_lifetime_ <= z->max_lifetime)) ||
                   (flag == 1 && (new_lifetime_  < z->min_lifetime) && (z->min_lifetime - new_lifetime_ < mx)) || 
@@ -969,7 +971,9 @@ void ZonedBlockDevice::OpenNewZone(Zone **tmp_zone, Env::WriteLifeTimeHint file_
 IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
                                           IOType io_type, Zone **out_zone,
                                           uint64_t new_lifetime, int new_type, std::vector<uint64_t> overlap_zone_list, int level) {
+  
   printf("AllocateIOZone Begin t_id=%d new_lifetime=%ld new_type=%d\n", gettid(),new_lifetime, new_type);
+  
   Zone *allocated_zone = nullptr;
   unsigned int best_diff = LIFETIME_DIFF_NOT_GOOD;
   int new_zone = 0;
@@ -1016,7 +1020,7 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
           if (allocated_zone == nullptr) {  // try again, find the
 
             // if((max_nr_active_io_zones_ - active_io_zones_.load() >= 3) && GetActiveIOZoneTokenIfAvailable()) {
-            //   printf("GetBestOpenZone when open %ld\n", active_io_zones_.load() );
+            //   printf("GetBestOpenZone when open active=%ld max_open_zone=%d\n", active_io_zones_.load(), max_nr_active_io_zones_);
             //   s = AllocateEmptyZone(&allocated_zone);
             //   new_zone = true;
             //   if (!s.ok()) {
@@ -1097,7 +1101,7 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
     /* If we haven't found an open zone to fill, open a new zone */
     if (allocated_zone == nullptr) {
       /* We have to make sure we can open an empty zone */
-      printf("allocated_zone != nulptr But we don't need it best_diff=%d\n", best_diff);
+      printf("allocated_zone == nulptr But we don't need it best_diff=%d active=%ld max_open_zone=%d\n", best_diff, active_io_zones_.load(), max_nr_active_io_zones_);
       while (!got_token && !GetActiveIOZoneTokenIfAvailable()) {
       
         s = FinishCheapestIOZone();

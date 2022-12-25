@@ -22,9 +22,6 @@
 #include <stdio.h>
 #include <stdlib.h>
  
-#include <sys/types.h>
-#include <sys/syscall.h> /*必须引用这个文件 */
-
 #include <iostream>
 #include <string>
 #include <utility>
@@ -459,16 +456,12 @@ void ZoneFile::PushExtent() {
   extent_filepos_ = file_size_;
 }
 
-pid_t gettid(void)
-{
-	return syscall(SYS_gettid);
-}
-
 
 uint64_t max_global_clock = 0;
 IOStatus ZoneFile::AllocateNewZone() {
   Zone* zone;
   IOStatus s;
+
   if(new_lifetime == 0) {
     new_lifetime = max_global_clock;
   } else {
@@ -609,8 +602,10 @@ IOStatus ZoneFile::SparseAppend(char* sparse_buffer, uint32_t data_size) {
   return IOStatus::OK();
 }
 
+std::mutex allocate_zone_mtx_;
 /* Assumes that data and size are block aligned */
 IOStatus ZoneFile::Append(void* data, int data_size) {
+  std::lock_guard<std::mutex> lck(allocate_zone_mtx_);
   uint32_t left = data_size;
   uint32_t wr_size, offset = 0;
   IOStatus s = IOStatus::OK();

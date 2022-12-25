@@ -58,9 +58,6 @@ const int T = 100;
 const int ENABLE_T_RANGE = 0; //1 means [-T, T]
 
 
-
-
-const bool DISABLE_RESET = true;
 const int ZoneNumber = 200;
 const int ENABLE_CAZA = 0;
 //Test wp
@@ -74,6 +71,7 @@ const int MODIFY_OFF = 0;
 // const bool DISABLE_RESET = true;
 
 //don't need to modify
+const bool DISABLE_RESET = false;
 extern int reset_zone_num;
 
 
@@ -238,6 +236,7 @@ class ZonedBlockDevice {
   /* Protects zone_resuorces_  condition variable, used
      for notifying changes in open_io_zones_ */
   std::mutex zone_resources_mtx_;
+  
   std::condition_variable zone_resources_;
   std::mutex zone_deferred_status_mutex_;
   IOStatus zone_deferred_status_;
