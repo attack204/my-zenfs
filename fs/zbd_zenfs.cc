@@ -1019,21 +1019,21 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
 
           if (allocated_zone == nullptr) {  // try again, find the
 
-            // if((max_nr_active_io_zones_ - active_io_zones_.load() >= 3) && GetActiveIOZoneTokenIfAvailable()) {
-            //   printf("GetBestOpenZone when open active=%ld max_open_zone=%d\n", active_io_zones_.load(), max_nr_active_io_zones_);
-            //   s = AllocateEmptyZone(&allocated_zone);
-            //   new_zone = true;
-            //   if (!s.ok()) {
-            //     PutActiveIOZoneToken();
-            //     PutOpenIOZoneToken();
-            //     return s;
-            //   }
-            //   if (allocated_zone != nullptr) {
-            //     OpenNewZone(&allocated_zone, file_lifetime, new_lifetime, new_type, level);
-            //   } else {
-            //     PutActiveIOZoneToken();
-            //   }
-            // } else {
+            if((max_nr_active_io_zones_ - active_io_zones_.load() >= 3) && GetActiveIOZoneTokenIfAvailable()) {
+              printf("GetBestOpenZone when open active=%ld max_open_zone=%d\n", active_io_zones_.load(), max_nr_active_io_zones_);
+              s = AllocateEmptyZone(&allocated_zone);
+              new_zone = true;
+              if (!s.ok()) {
+                PutActiveIOZoneToken();
+                PutOpenIOZoneToken();
+                return s;
+              }
+              if (allocated_zone != nullptr) {
+                OpenNewZone(&allocated_zone, file_lifetime, new_lifetime, new_type, level);
+              } else {
+                PutActiveIOZoneToken();
+              }
+            } else {
               s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
                                       &allocated_zone, 1, 1, std::vector<uint64_t>{});
             
@@ -1046,7 +1046,7 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
               } else {
                 add_allocation(1, 1, new_lifetime, new_type, allocated_zone);
               }
-            //}
+            }
           } else {
             add_allocation(1, 0, new_lifetime, new_type, allocated_zone);
           }
