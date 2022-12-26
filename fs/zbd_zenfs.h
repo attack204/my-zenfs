@@ -61,6 +61,7 @@ const int ENABLE_T_RANGE = 0; //1 means [-T, T]
 
 const int ZoneNumber = 200;
 const int ENABLE_CAZA = 0;
+const int MB = 1024 * 1024;
 //Test wp
 const int CALC_RESET = 1;
 const int K = 1; //gc top k
