@@ -936,42 +936,23 @@ IOStatus ZonedBlockDevice::TakeMigrateZone(Zone **out_zone,
   Zone *allocated_zone = nullptr;
   IOStatus s;
   if (MYMODE == true) {
-        //level segragation
+         //level segragation
         s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
                               &allocated_zone, 0, 0, std::vector<uint64_t>{});
-        if(allocated_zone == nullptr && new_type != 0) {
-          //L <= x <= R
+        if(allocated_zone == nullptr) //L <= x <= R
           s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
                                   &allocated_zone, 0, 1, std::vector<uint64_t>{});
-
-          if (allocated_zone == nullptr) {  // try again, find the
-            s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
+        if (allocated_zone == nullptr)  //x < L
+          s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
                                     &allocated_zone, 1, 1, std::vector<uint64_t>{});
-          
-            if (allocated_zone == nullptr) {  // try again, find the
-              s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
+        if (allocated_zone == nullptr) //R < x
+          s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
                                       &allocated_zone, 2, 1, std::vector<uint64_t>{});
-              if(allocated_zone != nullptr) {
-                add_allocation(1, 2, new_lifetime, new_type, allocated_zone);
-              }
-            } else {
-              add_allocation(1, 1, new_lifetime, new_type, allocated_zone);
-            }
-          } else {
-            add_allocation(1, 0, new_lifetime, new_type, allocated_zone);
-          }
-        } else if(allocated_zone != nullptr) {
-          add_allocation(0, 0, new_lifetime, new_type,allocated_zone);
-        }
     *out_zone = allocated_zone;
-      
+    printf("GC Migrate Begin new_lifetime=%ld new_type=%d zone_id=%ld zone_type=%d min_lifetime=%ld max_lifetime=%ld\n", new_lifetime, new_type, allocated_zone->id, allocated_zone->lifetime_type, allocated_zone->min_lifetime, allocated_zone->max_lifetime);
   } else if(MYMODE == false) {
       s = GetBestOpenZoneMatch(file_lifetime, &best_diff, out_zone, min_capacity);
   }
-
-
-
-
   if (s.ok() && (*out_zone) != nullptr) {
     Info(logger_, "TakeMigrateZone: %lu", (*out_zone)->start_);
   } else {
@@ -1049,7 +1030,7 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
         //level segragation
         s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
                               &allocated_zone, 0, 0, std::vector<uint64_t>{});
-        if(allocated_zone == nullptr && new_type != 0) {
+        if(allocated_zone == nullptr) {
           //L <= x <= R
           s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
                                   &allocated_zone, 0, 1, std::vector<uint64_t>{});
