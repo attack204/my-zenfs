@@ -763,36 +763,6 @@ IOStatus ZonedBlockDevice::GetBestOpenZoneMatch(
   if(new_lifetime_ == 0) {
     new_type = ((SHORT_THE == -1) ? 1 : 0);
   }
-  if(overlap_zone_list.size() != 0 && ENABLE_CAZA) {
-    for (const auto z : io_zones) {
-      if(find(overlap_zone_list.begin(), overlap_zone_list.end(), z->id) == overlap_zone_list.end()) continue; 
-      if (z->Acquire()) {
-        if ((z->used_capacity_ > 0) && !z->IsFull() &&
-            z->capacity_ >= min_capacity) {
-          printf(
-              "GetBestOpenZoneMatch Overlap zone_id=%ld new_lifetime_=%ld file_hint=%d new_type=%d "
-              "min_lifetime=%ld max_lifetime=%ld zone_type=%d global_clock=%d flag=%d flag2=%d overlap_list.size()=%ld\n",
-              z->id, new_lifetime_, file_lifetime, new_type, z->min_lifetime, z->max_lifetime, z->lifetime_type,
-              global_clock, flag, flag2, overlap_zone_list.size());
-            if (allocated_zone != nullptr) {  // flag == 1 need to find the maximal max_lifetime
-              s = allocated_zone->CheckRelease();
-              if (!s.ok()) {
-                printf("InRangeButCheckRelease Fail\n");
-                IOStatus s_ = z->CheckRelease();
-                if (!s_.ok()) return s_;
-                return s;
-              }
-            }
-            allocated_zone = z;
-            best_diff = 0;  // 把best_diff赋值为一个较小的值
-        } else {
-            s = z->CheckRelease();
-            if (!s.ok()) return s;
-        }
-      }
-    }
-  }
-  else {
     for (const auto z : io_zones) {
       if(z->wp_ != z->start_) {
         printf("zone test zone_id=%ld zone_cap=%ld valid=%ld type=%d min_lifetime=%ld max_lifetime=%ld is_busy=%d\n", z->id, z->capacity_ / MB, z->used_capacity_.load() / MB, z->lifetime_type, z->min_lifetime, z->max_lifetime, z->IsBusy());
@@ -848,17 +818,43 @@ IOStatus ZonedBlockDevice::GetBestOpenZoneMatch(
         }
       }
     }
-  }
-  *best_diff_out = best_diff;
+   *best_diff_out = best_diff;
   *zone_out = allocated_zone;
-
-
+   // if(overlap_zone_list.size() != 0 && ENABLE_CAZA) {
+  //   for (const auto z : io_zones) {
+  //     if(find(overlap_zone_list.begin(), overlap_zone_list.end(), z->id) == overlap_zone_list.end()) continue; 
+  //     if (z->Acquire()) {
+  //       if ((z->used_capacity_ > 0) && !z->IsFull() &&
+  //           z->capacity_ >= min_capacity) {
+  //         printf(
+  //             "GetBestOpenZoneMatch Overlap zone_id=%ld new_lifetime_=%ld file_hint=%d new_type=%d "
+  //             "min_lifetime=%ld max_lifetime=%ld zone_type=%d global_clock=%d flag=%d flag2=%d overlap_list.size()=%ld\n",
+  //             z->id, new_lifetime_, file_lifetime, new_type, z->min_lifetime, z->max_lifetime, z->lifetime_type,
+  //             global_clock, flag, flag2, overlap_zone_list.size());
+  //           if (allocated_zone != nullptr) {  // flag == 1 need to find the maximal max_lifetime
+  //             s = allocated_zone->CheckRelease();
+  //             if (!s.ok()) {
+  //               printf("InRangeButCheckRelease Fail\n");
+  //               IOStatus s_ = z->CheckRelease();
+  //               if (!s_.ok()) return s_;
+  //               return s;
+  //             }
+  //           }
+  //           allocated_zone = z;
+  //           best_diff = 0;  // 把best_diff赋值为一个较小的值
+  //       } else {
+  //           s = z->CheckRelease();
+  //           if (!s.ok()) return s;
+  //       }
+  //     }
+  //   }
+  // }
+  // else {
+ 
+  //}
 
   return IOStatus::OK();
 }
-
-
-
 
 
 extern int allocated_zone_num;

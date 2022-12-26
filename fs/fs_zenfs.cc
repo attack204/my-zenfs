@@ -292,7 +292,6 @@ ZenFS::~ZenFS() {
 }
 
 const int SLEEP_TIME = 1000 * 1000;
-const int MB = 1024 * 1024;
 int reset_zone_num = 0;
 int allocated_zone_num = 0;
 int pre_compaction_num;
