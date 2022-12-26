@@ -970,14 +970,22 @@ void ZonedBlockDevice::OpenNewZone(Zone **tmp_zone, Env::WriteLifeTimeHint file_
     if(new_lifetime == 0) new_type = ((SHORT_THE == -1) ? 1 : 0);
     allocated_zone->lifetime_type = new_type;
     //if(new_lifetime < T)
-    if(ENABLE_T_RANGE) {
-      allocated_zone->min_lifetime = (new_lifetime < T ? 0: new_lifetime - T);
+
+    if(ENABLE_T_SLICE) {
+      allocated_zone->min_lifetime = new_lifetime / T * T;
+      allocated_zone->max_lifetime = new_lifetime / T * T + T;
     } else {
-      allocated_zone->min_lifetime = new_lifetime;
+      if(ENABLE_T_RANGE) {
+        allocated_zone->min_lifetime = (new_lifetime < T ? 0: new_lifetime - T);
+      } else {
+        allocated_zone->min_lifetime = new_lifetime;
+      }
+      int base = T;
+      for(int i = 1; i <= level - 3; i++) base = base * MULTI;
+      allocated_zone->max_lifetime = new_lifetime + base;
     }
-    int base = T;
-    for(int i = 1; i <= level - 3; i++) base = base * MULTI;
-    allocated_zone->max_lifetime = new_lifetime + base;
+
+
     printf("OpenNewZone zone_id=%ld l=%ld r=%ld HINT=%d new_type=%d \n", allocated_zone->id, allocated_zone->min_lifetime, allocated_zone->max_lifetime, file_lifetime, new_type);
     
     add_allocation_off(3, file_lifetime, allocated_zone);
