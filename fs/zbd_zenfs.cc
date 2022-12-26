@@ -975,7 +975,7 @@ void ZonedBlockDevice::OpenNewZone(Zone **tmp_zone, Env::WriteLifeTimeHint file_
 
     if(ENABLE_T_SLICE) {
       allocated_zone->min_lifetime = new_lifetime / T * T;
-      allocated_zone->max_lifetime = new_lifetime / T * T + T;
+      allocated_zone->max_lifetime = (new_lifetime / T + 1) * T - 1;
     } else {
       if(ENABLE_T_RANGE) {
         allocated_zone->min_lifetime = (new_lifetime < T ? 0: new_lifetime - T);
