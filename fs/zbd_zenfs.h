@@ -49,8 +49,8 @@ const double GC_THRESHOLD = 1;//0: no GC 1: all GC
 
 
 
-const uint64_t GC_START_LEVEL = 30;                   
-const uint64_t GC_STOP_LEVEL = 70;
+const uint64_t GC_START_LEVEL = 40;                   
+const uint64_t GC_STOP_LEVEL = 50;
 
 const int SHORT_THE = 2;
 const int MAX_DIFFTIME = INF; //ALGO 2 3

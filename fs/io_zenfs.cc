@@ -467,7 +467,7 @@ IOStatus ZoneFile::AllocateNewZone() {
   } else {
     max_global_clock = std::max(max_global_clock, new_lifetime);
   }
-  printf("AllocateNewZone file_id=%ld HINT=%d new_lifetime=%ld new_type=%d\n", file_id_, lifetime_, new_lifetime, new_type);
+  printf("Begin Allocate file_id=%ld HINT=%d new_lifetime=%ld new_type=%d\n", file_id_, lifetime_, new_lifetime, new_type);
     s = zbd_->AllocateIOZone(lifetime_, io_type_, &zone, new_lifetime, new_type, overlap_zone_list, level); //my_allocate_alogortihm
   if (!s.ok()) return s;
   if (!zone) {
@@ -476,7 +476,7 @@ IOStatus ZoneFile::AllocateNewZone() {
   SetActiveZone(zone);
   zone_begin = zone->start_;
   zone_id = zone->id;
-  printf("ZoneFile::AllocateNewZone file_name=%s file_hint=%d io_zone_number=%ld allocate_file_id=%ld zone_id=%ld zone_hint=%d lifetime=%ld min_lifetime=%ld max_lifetime=%ld zone_left=%ld\n", 
+  printf("After Allocate file_name=%s file_hint=%d io_zone_number=%ld allocate_file_id=%ld zone_id=%ld zone_hint=%d lifetime=%ld min_lifetime=%ld max_lifetime=%ld zone_left=%ld\n", 
     debug_fname.c_str(), lifetime_, GetZbd()->GetIOZones().size(), GetID(), GetActiveZone()->id, zone->lifetime_, new_lifetime, zone->min_lifetime, zone->max_lifetime, zone->GetCapacityLeft());
   
   extent_start_ = active_zone_->wp_;
@@ -616,7 +616,7 @@ IOStatus ZoneFile::Append(void* data, int data_size) {
   }
 
   while (left) {
-    printf("Append::before active_zone_id=%ld zone_capactiy=%ld left=%d file_id=%ld file_size=%ld\n", active_zone_->id, active_zone_->capacity_, left, file_id_, file_size_);
+    printf("Before::Append active_zone_id=%ld zone_capactiy=%ld left=%d file_id=%ld file_size=%ld\n", active_zone_->id, active_zone_->capacity_, left, file_id_, file_size_);
     if (active_zone_->capacity_ == 0) { //这个地方很重要，既然capacity = 0，肯定就要allocate new zone
       
       PushExtent();
@@ -637,7 +637,7 @@ IOStatus ZoneFile::Append(void* data, int data_size) {
 
     file_size_ += wr_size;
     left -= wr_size;
-    printf("Append::after active_zone_id=%ld zone_capacity=%ld left=%d file_id=%ld file_size=%ld\n", active_zone_->id, active_zone_->capacity_, left, file_id_, file_size_);
+    printf("After::Append active_zone_id=%ld zone_capacity=%ld left=%d file_id=%ld file_size=%ld\n", active_zone_->id, active_zone_->capacity_, left, file_id_, file_size_);
     offset += wr_size;
   }
 
