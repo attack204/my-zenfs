@@ -340,7 +340,7 @@ uint64_t ZonedBlockDevice::GetReclaimableSpace() {
   for (const auto z : io_zones) {
     if (z->IsFull()) {
       reclaimable += (z->max_capacity_ - z->used_capacity_);
-      printf("GetReclaimableSpace id=%ld max_cap=%ld used=%ld reclaimable=%ld\n", z->id, z->max_capacity_, z->used_capacity_.load(), reclaimable);
+     // printf("GetReclaimableSpace id=%ld max_cap=%ld used=%ld reclaimable=%ld\n", z->id, z->max_capacity_, z->used_capacity_.load(), reclaimable);
     }
   }
   return reclaimable;
@@ -978,7 +978,7 @@ void ZonedBlockDevice::OpenNewZone(Zone **tmp_zone, Env::WriteLifeTimeHint file_
       allocated_zone->min_lifetime = new_lifetime;
     }
     int base = T;
-    for(int i = 1; i <= level - 3; i++) base = base * 4;
+    for(int i = 1; i <= level - 3; i++) base = base * MULTI;
     allocated_zone->max_lifetime = new_lifetime + base;
     printf("OpenNewZone zone_id=%ld l=%ld r=%ld HINT=%d new_type=%d \n", allocated_zone->id, allocated_zone->min_lifetime, allocated_zone->max_lifetime, file_lifetime, new_type);
     
@@ -990,7 +990,7 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
                                           IOType io_type, Zone **out_zone,
                                           uint64_t new_lifetime, int new_type, std::vector<uint64_t> overlap_zone_list, int level) {
   
-  printf("AllocateIOZone Begin t_id=%d new_lifetime=%ld new_type=%d\n", gettid(),new_lifetime, new_type);
+  printf("AllocateIOZone Begin t_id=%d new_lifetime=%ld new_type=%d active=%ld max_open_zone=%d\n", gettid(),new_lifetime, new_type, active_io_zones_.load(), max_nr_active_io_zones_);
   
   Zone *allocated_zone = nullptr;
   unsigned int best_diff = LIFETIME_DIFF_NOT_GOOD;

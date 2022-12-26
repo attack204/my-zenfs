@@ -55,6 +55,7 @@ const uint64_t GC_STOP_LEVEL = 70;
 const int SHORT_THE = 2;
 const int MAX_DIFFTIME = INF; //ALGO 2 3
 const int T = 100;
+const int MULTI = 1;
 const int ENABLE_T_RANGE = 0; //1 means [-T, T]
 
 
