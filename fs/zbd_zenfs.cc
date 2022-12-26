@@ -49,16 +49,18 @@
 
 namespace ROCKSDB_NAMESPACE {
 
-static int cnt[5];
-static int cnt_zone_hint[6];
+static int cnt[111];
+static int cnt_zone_hint[111];
 /*
 flag2: SHORT_THE 
 flag: 
+
 0: in [L, R]
 1: x < [L, R]
 2: [L, R] < x
-3: open new zone
-4: overlap zone
+3: type = 0 -> type 0 or type = 0 -> type 1
+4: open new zone when get active zone == true
+5: open new zone and finish a zone
 
 */
 void add_allocation(int flag2, int flag, uint64_t lifetime, int new_type, Zone *zone) {
@@ -66,7 +68,7 @@ void add_allocation(int flag2, int flag, uint64_t lifetime, int new_type, Zone *
   printf("allocation_type:flag2=%d flag=%d lifetime=%ld new_type=%d ", flag2, flag, lifetime, new_type);
   if(zone != nullptr)
     printf("zone_id=%ld zone_l=%ld zone_r=%ld zone_type=%d ", zone->id, zone->min_lifetime, zone->max_lifetime, zone->lifetime_type);
-  for(int i = 0; i < 5; i++) printf("type%d=%d ", i, cnt[i]);
+  for(int i = 0; i < 7; i++) printf("type%d=%d ", i, cnt[i]);
   printf("\n");
 }
 void add_allocation_off(int flag, Env::WriteLifeTimeHint lifetime, Zone *zone) {
@@ -988,8 +990,6 @@ void ZonedBlockDevice::OpenNewZone(Zone **tmp_zone, Env::WriteLifeTimeHint file_
 
     printf("OpenNewZone zone_id=%ld l=%ld r=%ld HINT=%d new_type=%d \n", allocated_zone->id, allocated_zone->min_lifetime, allocated_zone->max_lifetime, file_lifetime, new_type);
     
-    add_allocation_off(3, file_lifetime, allocated_zone);
-    add_allocation(3, 3, file_lifetime, new_type, allocated_zone);
     allocated_zone->hint_num[file_lifetime]++;
 }
 IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
@@ -1054,6 +1054,7 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
               }
               if (allocated_zone != nullptr) {
                 OpenNewZone(&allocated_zone, file_lifetime, new_lifetime, new_type, level);
+                add_allocation(1, 4, new_lifetime, new_type,allocated_zone);
               } else {
                 PutActiveIOZoneToken();
               }
@@ -1075,8 +1076,7 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
             add_allocation(1, 0, new_lifetime, new_type, allocated_zone);
           }
         } else if(allocated_zone != nullptr) {
-
-          add_allocation(0, 0, new_lifetime, new_type,allocated_zone);
+          add_allocation(0, 3, new_lifetime, new_type,allocated_zone);
         }
       
  
@@ -1145,29 +1145,8 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
 
       if (allocated_zone != nullptr) {
         OpenNewZone(&allocated_zone, file_lifetime, new_lifetime, new_type, level);
-  
-        // const long long MAX = 1e9;
-        // assert(allocated_zone->IsBusy());
-        // allocated_zone->lifetime_ = file_lifetime;
-        // if (new_lifetime > MAX) new_lifetime = 0;
-        // //allocated_zone->min_lifetime = std::max(static_cast<uint64_t>(0), new_lifetime - T);
-        // if(new_lifetime == 0) new_type = ((SHORT_THE == -1) ? 1 : 0);
-        // allocated_zone->lifetime_type = new_type;
-        // //if(new_lifetime < T)
-        // if(ENABLE_T_RANGE) {
-        //   allocated_zone->min_lifetime = (new_lifetime < T ? 0: new_lifetime - T);
-        // } else {
-        //   allocated_zone->min_lifetime = new_lifetime;
-        // }
-        // int base = T;
-        // for(int i = 1; i <= level - 3; i++) base = base * 4;
-        // allocated_zone->max_lifetime = new_lifetime + base;
-        // printf("OpenNewZone zone_id=%ld l=%ld r=%ld HINT=%d new_type=%d \n", allocated_zone->id, allocated_zone->min_lifetime, allocated_zone->max_lifetime, file_lifetime, new_type);
-        
-        // add_allocation_off(3, file_lifetime, allocated_zone);
-        // add_allocation(3, 3, file_lifetime, new_type, allocated_zone);
-        // allocated_zone->hint_num[file_lifetime]++;
-     
+        add_allocation(1, 5, new_lifetime, new_type,allocated_zone);
+        add_allocation_off(5, file_lifetime, allocated_zone);
       } else {
         PutActiveIOZoneToken();
       }
