@@ -794,7 +794,7 @@ IOStatus ZonedBlockDevice::GetBestOpenZoneMatch(
   }
   else {
     for (const auto z : io_zones) {
-      if(z->wp != z->start) {
+      if(z->wp_ != z->start_) {
         printf("zone test zone_id=%ld zone_cap=%ld valid=%ld type=%d min_lifetime=%ld max_lifetime=%ld is_busy=%d\n", z->id, z->capacity_, z->used_capacity_.load(), z->lifetime_type, z->min_lifetime, z->max_lifetime, z->IsBusy());
       }
       
