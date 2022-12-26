@@ -926,15 +926,52 @@ IOStatus ZonedBlockDevice::ReleaseMigrateZone(Zone *zone) {
 
 IOStatus ZonedBlockDevice::TakeMigrateZone(Zone **out_zone,
                                            Env::WriteLifeTimeHint file_lifetime,
-                                           uint32_t min_capacity) {
+                                           uint32_t min_capacity, uint64_t new_lifetime, int new_type) {
   std::unique_lock<std::mutex> lock(migrate_zone_mtx_);
   migrate_resource_.wait(lock, [this] { return !migrating_; });
 
   migrating_ = true;
 
   unsigned int best_diff = LIFETIME_DIFF_NOT_GOOD;
-  auto s =
-      GetBestOpenZoneMatch(file_lifetime, &best_diff, out_zone, min_capacity);
+  Zone *allocated_zone = nullptr;
+  IOStatus s;
+  if (MYMODE == true) {
+        //level segragation
+        s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
+                              &allocated_zone, 0, 0, std::vector<uint64_t>{});
+        if(allocated_zone == nullptr && new_type != 0) {
+          //L <= x <= R
+          s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
+                                  &allocated_zone, 0, 1, std::vector<uint64_t>{});
+
+          if (allocated_zone == nullptr) {  // try again, find the
+            s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
+                                    &allocated_zone, 1, 1, std::vector<uint64_t>{});
+          
+            if (allocated_zone == nullptr) {  // try again, find the
+              s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
+                                      &allocated_zone, 2, 1, std::vector<uint64_t>{});
+              if(allocated_zone != nullptr) {
+                add_allocation(1, 2, new_lifetime, new_type, allocated_zone);
+              }
+            } else {
+              add_allocation(1, 1, new_lifetime, new_type, allocated_zone);
+            }
+          } else {
+            add_allocation(1, 0, new_lifetime, new_type, allocated_zone);
+          }
+        } else if(allocated_zone != nullptr) {
+          add_allocation(0, 0, new_lifetime, new_type,allocated_zone);
+        }
+    *out_zone = allocated_zone;
+      
+  } else if(MYMODE == false) {
+      s = GetBestOpenZoneMatch(file_lifetime, &best_diff, out_zone, min_capacity);
+  }
+
+
+
+
   if (s.ok() && (*out_zone) != nullptr) {
     Info(logger_, "TakeMigrateZone: %lu", (*out_zone)->start_);
   } else {
@@ -1103,7 +1140,7 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
       /* We have to make sure we can open an empty zone */
       printf("allocated_zone == nulptr But we don't need it best_diff=%d active=%ld max_open_zone=%d\n", best_diff, active_io_zones_.load(), max_nr_active_io_zones_);
       while (!got_token && !GetActiveIOZoneTokenIfAvailable()) {
-      
+
         s = FinishCheapestIOZone();
         if (!s.ok()) {
           PutOpenIOZoneToken();
@@ -1120,29 +1157,29 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
       }
 
       if (allocated_zone != nullptr) {
-        //OpenNewZone(&allocated_zone, file_lifetime, new_lifetime, new_type, level);
-     
-        const long long MAX = 1e9;
-        assert(allocated_zone->IsBusy());
-        allocated_zone->lifetime_ = file_lifetime;
-        if (new_lifetime > MAX) new_lifetime = 0;
-        //allocated_zone->min_lifetime = std::max(static_cast<uint64_t>(0), new_lifetime - T);
-        if(new_lifetime == 0) new_type = ((SHORT_THE == -1) ? 1 : 0);
-        allocated_zone->lifetime_type = new_type;
-        //if(new_lifetime < T)
-        if(ENABLE_T_RANGE) {
-          allocated_zone->min_lifetime = (new_lifetime < T ? 0: new_lifetime - T);
-        } else {
-          allocated_zone->min_lifetime = new_lifetime;
-        }
-        int base = T;
-        for(int i = 1; i <= level - 3; i++) base = base * 4;
-        allocated_zone->max_lifetime = new_lifetime + base;
-        printf("OpenNewZone zone_id=%ld l=%ld r=%ld HINT=%d new_type=%d \n", allocated_zone->id, allocated_zone->min_lifetime, allocated_zone->max_lifetime, file_lifetime, new_type);
+        OpenNewZone(&allocated_zone, file_lifetime, new_lifetime, new_type, level);
+  
+        // const long long MAX = 1e9;
+        // assert(allocated_zone->IsBusy());
+        // allocated_zone->lifetime_ = file_lifetime;
+        // if (new_lifetime > MAX) new_lifetime = 0;
+        // //allocated_zone->min_lifetime = std::max(static_cast<uint64_t>(0), new_lifetime - T);
+        // if(new_lifetime == 0) new_type = ((SHORT_THE == -1) ? 1 : 0);
+        // allocated_zone->lifetime_type = new_type;
+        // //if(new_lifetime < T)
+        // if(ENABLE_T_RANGE) {
+        //   allocated_zone->min_lifetime = (new_lifetime < T ? 0: new_lifetime - T);
+        // } else {
+        //   allocated_zone->min_lifetime = new_lifetime;
+        // }
+        // int base = T;
+        // for(int i = 1; i <= level - 3; i++) base = base * 4;
+        // allocated_zone->max_lifetime = new_lifetime + base;
+        // printf("OpenNewZone zone_id=%ld l=%ld r=%ld HINT=%d new_type=%d \n", allocated_zone->id, allocated_zone->min_lifetime, allocated_zone->max_lifetime, file_lifetime, new_type);
         
-        add_allocation_off(3, file_lifetime, allocated_zone);
-        add_allocation(3, 3, file_lifetime, new_type, allocated_zone);
-        allocated_zone->hint_num[file_lifetime]++;
+        // add_allocation_off(3, file_lifetime, allocated_zone);
+        // add_allocation(3, 3, file_lifetime, new_type, allocated_zone);
+        // allocated_zone->hint_num[file_lifetime]++;
      
       } else {
         PutActiveIOZoneToken();

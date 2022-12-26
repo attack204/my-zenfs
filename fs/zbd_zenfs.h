@@ -322,7 +322,7 @@ class ZonedBlockDevice {
   IOStatus ReleaseMigrateZone(Zone *zone);
 
   IOStatus TakeMigrateZone(Zone **out_zone, Env::WriteLifeTimeHint lifetime,
-                           uint32_t min_capacity);
+                           uint32_t min_capacity, uint64_t new_lifetime, int new_type);
 
   void AddBytesWritten(uint64_t written) { bytes_written_ += written; };
   void AddGCBytesWritten(uint64_t written) { gc_bytes_written_ += written; };
