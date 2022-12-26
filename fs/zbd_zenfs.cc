@@ -65,7 +65,7 @@ void add_allocation(int flag2, int flag, uint64_t lifetime, int new_type, Zone *
   cnt[flag]++;
   printf("allocation_type:flag2=%d flag=%d lifetime=%ld new_type=%d ", flag2, flag, lifetime, new_type);
   if(zone != nullptr)
-    printf("zone_id=%ld zone_l=%ld zone_r=%ld zone_type=%d", zone->id, zone->min_lifetime, zone->max_lifetime, zone->lifetime_type);
+    printf("zone_id=%ld zone_l=%ld zone_r=%ld zone_type=%d ", zone->id, zone->min_lifetime, zone->max_lifetime, zone->lifetime_type);
   for(int i = 0; i < 5; i++) printf("type%d=%d ", i, cnt[i]);
   printf("\n");
 }
@@ -804,7 +804,7 @@ IOStatus ZonedBlockDevice::GetBestOpenZoneMatch(
           printf(
               "GetBestOpenZoneMatch Normal zone_id=%ld cap=%ld new_lifetime_=%ld new_type=%d "
               "min_lifetime=%ld max_lifetime=%ld zone_type=%d global_clock=%d flag=%d flag2=%d overlap_list.size()=%ld\n",
-              z->id, z->capacity_, new_lifetime_, new_type, z->min_lifetime, z->max_lifetime, z->lifetime_type,
+              z->id, z->capacity_ / MB, new_lifetime_, new_type, z->min_lifetime, z->max_lifetime, z->lifetime_type,
               global_clock, flag, flag2, overlap_zone_list.size());
           //new_type: file type
           //lifetime_type: zone type;

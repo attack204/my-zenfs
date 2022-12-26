@@ -476,7 +476,7 @@ IOStatus ZoneFile::AllocateNewZone() {
   SetActiveZone(zone);
   zone_begin = zone->start_;
   zone_id = zone->id;
-  printf("After Allocate file_name=%s file_hint=%d io_zone_number=%ld allocate_file_id=%ld zone_id=%ld zone_hint=%d lifetime=%ld min_lifetime=%ld max_lifetime=%ld zone_left=%ld\n", 
+  printf("Allocate Result file_name=%s file_hint=%d io_zone_number=%ld allocate_file_id=%ld zone_id=%ld zone_hint=%d lifetime=%ld min_lifetime=%ld max_lifetime=%ld zone_left=%ld\n", 
     debug_fname.c_str(), lifetime_, GetZbd()->GetIOZones().size(), GetID(), GetActiveZone()->id, zone->lifetime_, new_lifetime, zone->min_lifetime, zone->max_lifetime, zone->GetCapacityLeft());
   
   extent_start_ = active_zone_->wp_;
@@ -602,10 +602,8 @@ IOStatus ZoneFile::SparseAppend(char* sparse_buffer, uint32_t data_size) {
   return IOStatus::OK();
 }
 
-std::mutex allocate_zone_mtx_;
 /* Assumes that data and size are block aligned */
 IOStatus ZoneFile::Append(void* data, int data_size) {
-  std::lock_guard<std::mutex> lck(allocate_zone_mtx_);
   uint32_t left = data_size;
   uint32_t wr_size, offset = 0;
   IOStatus s = IOStatus::OK();
