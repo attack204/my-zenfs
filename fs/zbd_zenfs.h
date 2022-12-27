@@ -39,13 +39,9 @@ const bool MYMODE = true;
 
 
 const int ENABLE_PRECOMPACTION = 0; 
-//all compensation
-const double GC_THRESHOLD = 1;//0: no GC 1: all GC
-
-//all GC
- //const double GC_THRESHOLD = 0;//0: no GC 1: all GC
- const int ENABLE_CASE1 = 0;
- const int ENABLE_CASE2 = 0;
+//1 0 0: all GC 0 1 1 all compensation
+const int ENABLE_CASE1 = 0;
+const int ENABLE_CASE2 = 0;
 
 
 
@@ -54,9 +50,12 @@ const uint64_t GC_STOP_LEVEL = 50;
 
 const int SHORT_THE = 2;
 const int MAX_DIFFTIME = INF; //ALGO 2 3
-const int T = 25;
+const int T = 100;
 const int MULTI = 1;
 const int ENABLE_T_SLICE = 1;
+const int ENABLE_SHORT_WITH_TYPE0 = 50;
+
+
 
 
 
@@ -64,17 +63,9 @@ const int ZoneNumber = 150;
 const int ENABLE_CAZA = 0;
 const int MB = 1024 * 1024;
 const int ENABLE_T_RANGE = 0; //1 means [-T, T]
-//Test wp
 const int CALC_RESET = 1;
 const int K = 1; //gc top k
 const int MODIFY_OFF = 0;
-
-// Test space waste
-// const uint64_t GC_START_LEVEL = 0;              
-// const uint64_t GC_STOP_LEVEL = 100;
-// const bool DISABLE_RESET = true;
-
-//don't need to modify
 const bool DISABLE_RESET = false;
 extern int reset_zone_num;
 
