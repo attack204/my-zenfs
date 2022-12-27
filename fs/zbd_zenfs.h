@@ -40,6 +40,7 @@ const bool MYMODE = true;
 
 const int ENABLE_PRECOMPACTION = 0; 
 //1 0 0: all GC 0 1 1 all compensation
+const int GC_THRESHOLD = 1;
 const int ENABLE_CASE1 = 0;
 const int ENABLE_CASE2 = 0;
 
@@ -54,8 +55,6 @@ const int T = 100;
 const int MULTI = 1;
 const int ENABLE_T_SLICE = 1;
 const int ENABLE_SHORT_WITH_TYPE0 = 50;
-
-
 
 
 
