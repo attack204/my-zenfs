@@ -524,9 +524,9 @@ IOStatus ZonedBlockDevice::ResetUnusedIOZones() {
 IOStatus ZonedBlockDevice::MyResetUnusedIOZones() {
   for (const auto z : io_zones) {
     if (z->Acquire()) {
+      if (!z->IsEmpty() && !z->IsUsed()) {  // zone is empty
         printf("Reset zone_id=%ld capacity=%ld used_capacity=%ld HINT=%d level=%d type=%d L=%ld R=%ld\n", 
         z->id, z->capacity_, z->used_capacity_.load(), z->lifetime_, z->level, z->lifetime_type, z->min_lifetime, z->max_lifetime);
-      if (!z->IsEmpty() && !z->IsUsed()) {  // zone is empty
         bool full = z->IsFull();
         IOStatus reset_status = z->Reset();
         reset_zone_num++;
@@ -550,8 +550,8 @@ IOStatus ZonedBlockDevice::ResetTartetUnusedIOZones(uint64_t id) {
   for (const auto z : io_zones) {
     if (z->Acquire()) {
       if (!z->IsEmpty() && !z->IsUsed() && z->id == id) {
-          printf("Reset zone_id=%ld capacity=%ld used_capacity=%ld HINT=%d level=%d type=%d L=%ld R=%ld\n", 
-        z->id, z->capacity_, z->used_capacity_.load(), z->lifetime_, z->level, z->lifetime_type, z->min_lifetime, z->max_lifetime);
+        printf("Reset zone_id=%ld padding=%ld start=%ld max_capacity=%ld wp=%ld is_empty()=%d capacity=%ld used_capacity=%ld HINT=%d L=%ld R=%ld\n", 
+        z->id, z->start_ + z->max_capacity_ - z-> wp_, z->start_, z->max_capacity_, z-> wp_, z->IsEmpty(), z->capacity_, z->used_capacity_.load(), z->lifetime_, z->min_lifetime, z->max_lifetime);
         bool full = z->IsFull();
         IOStatus reset_status = z->Reset();
         z->prediction_lifetime_list.clear();
