@@ -37,21 +37,22 @@ const int INF = 1e9;
 //false: use default algorithm
 const bool MYMODE = true; 
 
-
-const int ENABLE_PRECOMPACTION = 0; 
 //1 0 0: all GC 0 1 1 all compensation
+const int ENABLE_PRECOMPACTION = 0; 
 const int GC_THRESHOLD = 1;
 const int ENABLE_CASE1 = 0;
 const int ENABLE_CASE2 = 0;
 
-
-
-const uint64_t GC_START_LEVEL = 40;                   
+const int T = 100;
+const uint64_t GC_START_LEVEL = 40;
 const uint64_t GC_STOP_LEVEL = 50;
+
+//const int T = 50;
+// const uint64_t GC_START_LEVEL = 20;
+// const uint64_t GC_STOP_LEVEL = 30;
 
 const int SHORT_THE = 2;
 const int MAX_DIFFTIME = INF; //ALGO 2 3
-const int T = 100;
 const int MULTI = 1;
 const int ENABLE_T_SLICE = 1;
 const int ENABLE_SHORT_WITH_TYPE0 = 50;
@@ -104,6 +105,7 @@ class Zone {
   uint64_t min_lifetime;
   uint64_t max_lifetime;
   int lifetime_type; //0 top 1 upper
+  int level;
   std::atomic<uint64_t> used_capacity_;
   std::vector<uint64_t> files_id;
   std::vector<uint64_t> lifetime_list;

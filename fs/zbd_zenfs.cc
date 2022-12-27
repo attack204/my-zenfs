@@ -500,8 +500,8 @@ IOStatus ZonedBlockDevice::ResetUnusedIOZones() {
   for (const auto z : io_zones) {
     if (z->Acquire()) {
       if (!z->IsEmpty() && !z->IsUsed()) {  // used = 0
-        printf("Reset zone_id=%ld padding=%ld zone_start=%ld is_empty()=%d capacity=%ld used_capacity=%ld HINT=%d L=%ld R=%ld\n", 
-        z->id, z->start_ + z->max_capacity_ - z-> wp_, z->start_, z->IsEmpty(), z->capacity_, z->used_capacity_.load(), z->lifetime_, z->min_lifetime, z->max_lifetime);
+        printf("Reset zone_id=%ld capacity=%ld used_capacity=%ld HINT=%d level=%d type=%d L=%ld R=%ld\n", 
+        z->id, z->capacity_, z->used_capacity_.load(), z->lifetime_, z->level, z->lifetime_type, z->min_lifetime, z->max_lifetime);
         bool full = z->IsFull();
         IOStatus reset_status = z->Reset();
         reset_zone_num++;
@@ -524,8 +524,8 @@ IOStatus ZonedBlockDevice::ResetUnusedIOZones() {
 IOStatus ZonedBlockDevice::MyResetUnusedIOZones() {
   for (const auto z : io_zones) {
     if (z->Acquire()) {
-        printf("Reset zone_id=%ld padding=%ld zone_start=%ld is_empty()=%d capacity=%ld used_capacity=%ld HINT=%d L=%ld R=%ld\n", 
-        z->id, z->start_ + z->max_capacity_ - z-> wp_, z->start_, z->IsEmpty(), z->capacity_, z->used_capacity_.load(), z->lifetime_, z->min_lifetime, z->max_lifetime);
+        printf("Reset zone_id=%ld capacity=%ld used_capacity=%ld HINT=%d level=%d type=%d L=%ld R=%ld\n", 
+        z->id, z->capacity_, z->used_capacity_.load(), z->lifetime_, z->level, z->lifetime_type, z->min_lifetime, z->max_lifetime);
       if (!z->IsEmpty() && !z->IsUsed()) {  // zone is empty
         bool full = z->IsFull();
         IOStatus reset_status = z->Reset();
@@ -550,8 +550,8 @@ IOStatus ZonedBlockDevice::ResetTartetUnusedIOZones(uint64_t id) {
   for (const auto z : io_zones) {
     if (z->Acquire()) {
       if (!z->IsEmpty() && !z->IsUsed() && z->id == id) {
-        printf("Reset zone_id=%ld padding=%ld start=%ld max_capacity=%ld wp=%ld is_empty()=%d capacity=%ld used_capacity=%ld HINT=%d L=%ld R=%ld\n", 
-        z->id, z->start_ + z->max_capacity_ - z-> wp_, z->start_, z->max_capacity_, z-> wp_, z->IsEmpty(), z->capacity_, z->used_capacity_.load(), z->lifetime_, z->min_lifetime, z->max_lifetime);
+          printf("Reset zone_id=%ld capacity=%ld used_capacity=%ld HINT=%d level=%d type=%d L=%ld R=%ld\n", 
+        z->id, z->capacity_, z->used_capacity_.load(), z->lifetime_, z->level, z->lifetime_type, z->min_lifetime, z->max_lifetime);
         bool full = z->IsFull();
         IOStatus reset_status = z->Reset();
         z->prediction_lifetime_list.clear();
@@ -773,11 +773,6 @@ IOStatus ZonedBlockDevice::GetBestOpenZoneMatch(
       if (z->Acquire()) {
         if ((z->used_capacity_ > 0) && !z->IsFull() &&
             z->capacity_ >= min_capacity) {
-          printf(
-              "GetBestOpenZoneMatch Normal zone_id=%ld cap=%ld new_lifetime_=%ld new_type=%d "
-              "min_lifetime=%ld max_lifetime=%ld zone_type=%d global_clock=%d flag=%d flag2=%d overlap_list.size()=%ld\n",
-              z->id, z->capacity_ / MB, new_lifetime_, new_type, z->min_lifetime, z->max_lifetime, z->lifetime_type,
-              global_clock, flag, flag2, overlap_zone_list.size());
           //new_type: file type
           //lifetime_type: zone type;
           if( (new_type == 0 && z->lifetime_type == 0 && flag2 == 0) 
@@ -793,6 +788,11 @@ IOStatus ZonedBlockDevice::GetBestOpenZoneMatch(
                 )
           )
           {
+              printf(
+              "GetBestOpenZoneMatch Normal zone_id=%ld cap=%ld new_lifetime_=%ld new_type=%d "
+              "min_lifetime=%ld max_lifetime=%ld zone_type=%d global_clock=%d flag=%d flag2=%d overlap_list.size()=%ld\n",
+              z->id, z->capacity_ / MB, new_lifetime_, new_type, z->min_lifetime, z->max_lifetime, z->lifetime_type,
+              global_clock, flag, flag2, overlap_zone_list.size());
             if(flag == 1 && (new_lifetime_ < z->min_lifetime)) 
               mx = z->min_lifetime - new_lifetime_;
             if(flag == 2 && (new_lifetime_ > z->max_lifetime))
@@ -971,6 +971,7 @@ void ZonedBlockDevice::OpenNewZone(Zone **tmp_zone, Env::WriteLifeTimeHint file_
     //allocated_zone->min_lifetime = std::max(static_cast<uint64_t>(0), new_lifetime - T);
     if(new_lifetime == 0) new_type = ((SHORT_THE == -1) ? 1 : 0);
     allocated_zone->lifetime_type = new_type;
+    allocated_zone->level = level;
     //if(new_lifetime < T)
 
     if(ENABLE_T_SLICE) {
@@ -1034,8 +1035,11 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
   /* Try to fill an already open zone(with the best life time diff) */
   if (MYMODE == true) {
         //level segragation
-        s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
+        if(new_type == 0) {
+          s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
                               &allocated_zone, 0, 0, std::vector<uint64_t>{});
+        }
+        
         if(allocated_zone == nullptr) {
           //L <= x <= R
           s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
