@@ -783,8 +783,8 @@ IOStatus ZonedBlockDevice::GetBestOpenZoneMatch(
           if( (new_type == 0 && z->lifetime_type == 0 && flag2 == 0) 
               ||
                 (
-                //((new_type == 0 && z->lifetime_type == 1 && flag2 == 1) || (new_type == 1 && z->lifetime_type == 1 && flag2 == 1)) 
-                //&& 
+                ((new_type == 0 && z->lifetime_type == 1 && flag2 == 1) || (new_type == 1 && z->lifetime_type == 1 && flag2 == 1)) 
+                && 
                 (
                   (flag == 0 && (new_lifetime_ >= z->min_lifetime) && (new_lifetime_ <= z->max_lifetime)) ||
                   (flag == 1 && (new_lifetime_  < z->min_lifetime) && (z->min_lifetime - new_lifetime_ < mx)) || 
