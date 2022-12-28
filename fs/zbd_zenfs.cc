@@ -949,15 +949,17 @@ IOStatus ZonedBlockDevice::TakeMigrateZone(Zone **out_zone,
           s = GetBestOpenZoneMatch(new_lifetime, new_type, file_lifetime, &best_diff,
                                       &allocated_zone, 2, 1, std::vector<uint64_t>{}, min_capacity);
     *out_zone = allocated_zone;
-    printf("GC Migrate Begin new_lifetime=%ld new_type=%d zone_id=%ld zone_type=%d min_lifetime=%ld max_lifetime=%ld\n", new_lifetime, new_type, allocated_zone->id, allocated_zone->lifetime_type, allocated_zone->min_lifetime, allocated_zone->max_lifetime);
+   
   } else if(MYMODE == false) {
       s = GetBestOpenZoneMatch(file_lifetime, &best_diff, out_zone, min_capacity);
   }
   if (s.ok() && (*out_zone) != nullptr) {
+     printf("GC Migrate Begin new_lifetime=%ld new_type=%d zone_id=%ld zone_type=%d min_lifetime=%ld max_lifetime=%ld\n", new_lifetime, new_type, allocated_zone->id, allocated_zone->lifetime_type, allocated_zone->min_lifetime, allocated_zone->max_lifetime);
     Info(logger_, "TakeMigrateZone: %lu", (*out_zone)->start_);
   } else {
     migrating_ = false;
-  }
+    printf("ERROR GC fail new_lifetime=%ld new_type=%d min_capactiy=%d\n", new_lifetime, new_type, min_capactity);
+  } 
 
   return s;
 }
