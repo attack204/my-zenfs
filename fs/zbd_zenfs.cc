@@ -954,7 +954,7 @@ IOStatus ZonedBlockDevice::TakeMigrateZone(Zone **out_zone,
       s = GetBestOpenZoneMatch(file_lifetime, &best_diff, out_zone, min_capacity);
   }
   if (s.ok() && (*out_zone) != nullptr) {
-     printf("GC Migrate Begin new_lifetime=%ld new_type=%d zone_id=%ld zone_type=%d min_lifetime=%ld max_lifetime=%ld\n", new_lifetime, new_type, allocated_zone->id, allocated_zone->lifetime_type, allocated_zone->min_lifetime, allocated_zone->max_lifetime);
+     printf("GC Migrate Begin new_lifetime=%ld new_type=%d zone_id=%ld zone_type=%d min_lifetime=%ld max_lifetime=%ld\n", new_lifetime, new_type, (*out_zone)->id, (*out_zone)->lifetime_type, (*out_zone)->min_lifetime, (*out_zone)->max_lifetime);
     Info(logger_, "TakeMigrateZone: %lu", (*out_zone)->start_);
   } else {
     migrating_ = false;
