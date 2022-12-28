@@ -958,7 +958,7 @@ IOStatus ZonedBlockDevice::TakeMigrateZone(Zone **out_zone,
     Info(logger_, "TakeMigrateZone: %lu", (*out_zone)->start_);
   } else {
     migrating_ = false;
-    printf("ERROR GC fail new_lifetime=%ld new_type=%d min_capactiy=%d\n", new_lifetime, new_type, min_capactity);
+    printf("ERROR GC fail new_lifetime=%ld new_type=%d min_capactiy=%d\n", new_lifetime, new_type, min_capacity);
   } 
 
   return s;
