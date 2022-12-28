@@ -59,7 +59,7 @@ const int ENABLE_SHORT_WITH_TYPE0 = 50;
 
 
 
-const int ZoneNumber = 150;
+const int ZoneNumber = 100;
 const int ENABLE_CAZA = 0;
 const int MB = 1024 * 1024;
 const int ENABLE_T_RANGE = 0; //1 means [-T, T]
