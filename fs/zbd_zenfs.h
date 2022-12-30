@@ -45,7 +45,7 @@ const int ENABLE_CASE2 = 0;
 
 const int T = 100;
 const uint64_t GC_START_LEVEL = 60;
-const uint64_t GC_STOP_LEVEL = 70;
+const uint64_t GC_STOP_LEVEL = 75;
 
 //const int T = 50;
 // const uint64_t GC_START_LEVEL = 20;
