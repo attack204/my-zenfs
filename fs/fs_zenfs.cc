@@ -528,6 +528,11 @@ void ZenFS::MyGCWorker() {
             for (auto& x : hint_num) {
               printf("key=%d value=%d\n", x.first, x.second);
             }
+            printf("[");
+            for (auto& x : prediction_lifetime_list) {
+              printf("%ld ", x);
+            }
+            printf("]\n");
         }
 
 
