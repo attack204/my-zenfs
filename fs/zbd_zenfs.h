@@ -46,6 +46,7 @@ const int ENABLE_LIMIT_LEVEL = 3;
 
 
 const int T = 50;
+const int MAX_LIFETIME = 1000;
 const uint64_t GC_START_LEVEL = 60;
 const uint64_t GC_STOP_LEVEL = 75;
 
