@@ -474,9 +474,6 @@ void ZenFS::MyGCWorker() {
     if (migrate_exts.size() > 0) 
       GC_num++;
     if (migrate_zones_start.size() > 0) {
-      total_file_num += migrate_file_num;
-      total_size += migrate_size;
-      total_extents += migrate_exts.size();
       printf("GC Begin %d GC=%ld Compensation=%d precompaction_file_num=%d clock=%d ", ++gc_times, GC_num, pre_compaction_num, precompaction_file_num, get_clock());
       printf(
           "total_size=%ld free=%ld drive_io=%ld rocks_io=%ld total_extents=%ld total_file_num=%ld zone_size=%ld" 
@@ -563,6 +560,11 @@ void ZenFS::MyGCWorker() {
 
       if (!s.ok()) {
         Error(logger_, "Garbage collection failed");
+        printf("GC failed");
+      } else {
+        total_file_num += migrate_file_num;
+        total_size += migrate_size;
+        total_extents += migrate_exts.size();
       }
     }
   }
