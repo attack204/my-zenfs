@@ -295,6 +295,7 @@ const int SLEEP_TIME = 1000 * 1000;
 int reset_zone_num = 0;
 int allocated_zone_num = 0;
 int pre_compaction_num;
+int precompaction_file_num;
 uint64_t total_file_num = 0;
 uint64_t total_size = 0;
 uint64_t total_extents = 0;
@@ -476,7 +477,7 @@ void ZenFS::MyGCWorker() {
       total_file_num += migrate_file_num;
       total_size += migrate_size;
       total_extents += migrate_exts.size();
-      printf("GC Begin %d GC=%ld Compensation=%d clock=%d ", ++gc_times, GC_num, pre_compaction_num, get_clock());
+      printf("GC Begin %d GC=%ld Compensation=%d precompaction_file_num=%d clock=%d ", ++gc_times, GC_num, pre_compaction_num, precompaction_file_num, get_clock());
       printf(
           "total_size=%ld free=%ld drive_io=%ld rocks_io=%ld total_extents=%ld total_file_num=%ld zone_size=%ld" 
           "reset_zone_num=%d migrate_exts=%ld migrate_file_num=%ld migrate_size=%ld case0=%d case1=%d case2=%d case3=%d case4=%d case5=%d\n",
