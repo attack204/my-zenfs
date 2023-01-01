@@ -406,8 +406,7 @@ void ZenFS::MyGCWorker() {
         } else if(ENABLE_LIMIT_LEVEL) {
           printf("Case 5 limit level %d\n", ++case5);
           control_flag = 1;
-        }
-        else if(1.0 * zone.used_capacity / zone.max_capacity <= GC_THRESHOLD){
+        } else if(1.0 * zone.used_capacity / zone.max_capacity <= GC_THRESHOLD){
           printf("Case 3 GC %d %lf\n", ++case3, 1.0 * zone.used_capacity / zone.max_capacity);
           control_flag = 0;
         } else {
