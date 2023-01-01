@@ -41,7 +41,7 @@ namespace ROCKSDB_NAMESPACE {
 
 extern uint64_t GetIOSTATS();
 
-extern bool DoPreCompaction(std::vector<uint64_t> file_list);
+extern bool DoPreCompaction(std::vector<uint64_t> file_list, int ENABLE_LIMIT_LEVEL);
 extern int get_bg_compaction_scheduled_();
 extern void set_write_amplification(double wp);
 extern void set_write_amplification_no_set(double wp);
@@ -417,7 +417,7 @@ void ZenFS::MyGCWorker() {
         for(auto &x: file_list) printf("%ld ", x);
         puts("");
         if(ENABLE_PRECOMPACTION && zone.used_capacity != 0 && file_list.size() != 0 && control_flag == 1) {
-          if( DoPreCompaction(file_list)) {
+          if( DoPreCompaction(file_list, ENABLE_LIMIT_LEVEL)) {
             pre_compaction_num++;
             printf("DoPreCompaction %d zone_id=%ld file_list.size()=%ld\n", pre_compaction_num, zone.id, file_list.size());
             for (auto& x : file_list_all) {
