@@ -38,10 +38,8 @@ const int INF = 1e9;
 const bool MYMODE = true; 
 
 //1 0 0: all GC 0 1 1 all compensation
-const int ENABLE_PRECOMPACTION = 0; 
+const int ENABLE_PRECOMPACTION = 1; 
 const double GC_THRESHOLD = 1;
-const int ENABLE_CASE1 = 0;
-const int ENABLE_CASE2 = 0;
 const int ENABLE_LIMIT_LEVEL = 3;
 
 
@@ -71,6 +69,8 @@ const int K = 1; //gc top k
 const int MODIFY_OFF = 0;
 const bool DISABLE_RESET = false;
 extern int reset_zone_num;
+const int ENABLE_CASE1 = 0;
+const int ENABLE_CASE2 = 0;
 
 
 class ZonedBlockDevice;
