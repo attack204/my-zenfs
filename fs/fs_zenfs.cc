@@ -299,7 +299,7 @@ uint64_t total_file_num = 0;
 uint64_t total_size = 0;
 uint64_t total_extents = 0;
 uint64_t GC_num = 0;
-int case0 = 0, case1 = 0, case2 = 0, case3 = 0, case4 = 0;
+int case0 = 0, case1 = 0, case2 = 0, case3 = 0, case4 = 0, case5 = 0;
 bool check_gced(std::vector<uint64_t> &file_list, std::map<int64_t, int> &has_migrated) {
   for(auto &x: file_list) {
     if((!has_migrated.empty())  && has_migrated.find(x) != has_migrated.end()) {
@@ -403,6 +403,9 @@ void ZenFS::MyGCWorker() {
         } else if(ENABLE_CASE2 && check_gced(file_list, has_migrated)) {
           printf("Case 2 gced before %d\n", ++case2);
           control_flag = 1;
+        } else if(ENABLE_LIMIT_LEVEL) {
+          printf("Case 5 limit level %d\n", ++case5);
+          control_flag = 1;
         }
         else if(1.0 * zone.used_capacity / zone.max_capacity <= GC_THRESHOLD){
           printf("Case 3 GC %d %lf\n", ++case3, 1.0 * zone.used_capacity / zone.max_capacity);
@@ -477,9 +480,9 @@ void ZenFS::MyGCWorker() {
       printf("GC Begin %d GC=%ld Compensation=%d clock=%d ", ++gc_times, GC_num, pre_compaction_num, get_clock());
       printf(
           "total_size=%ld free=%ld drive_io=%ld rocks_io=%ld total_extents=%ld total_file_num=%ld zone_size=%ld" 
-          "reset_zone_num=%d migrate_exts=%ld migrate_file_num=%ld migrate_size=%ld case0=%d case1=%d case2=%d case3=%d case4=%d\n",
+          "reset_zone_num=%d migrate_exts=%ld migrate_file_num=%ld migrate_size=%ld case0=%d case1=%d case2=%d case3=%d case4=%d case5=%d\n",
            total_size / MB, zbd_->GetFreeSpace(), write_size_calc_no_reset, GetIOSTATS(), total_extents, total_file_num, migrate_zones_start.size(), 
-          reset_zone_num, migrate_exts.size(), migrate_file_num, migrate_size / MB, case0, case1, case2, case3, case4);
+          reset_zone_num, migrate_exts.size(), migrate_file_num, migrate_size / MB, case0, case1, case2, case3, case4, case5);
 
 
       for(uint64_t i = 0; i < greedy_zone_id.size(); i++) {
