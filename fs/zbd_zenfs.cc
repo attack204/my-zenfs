@@ -999,7 +999,7 @@ IOStatus ZonedBlockDevice::AllocateIOZone(Env::WriteLifeTimeHint file_lifetime,
                                           IOType io_type, Zone **out_zone,
                                           uint64_t new_lifetime, int new_type, std::vector<uint64_t> overlap_zone_list, int level) {
   
-  printf("AllocateIOZone::Before t_id=%d deletion_time=%ld new_type=%d active=%ld max_open_zone=%d\n", gettid(),new_lifetime, new_type, active_io_zones_.load(), max_nr_active_io_zones_);
+  printf("AllocateIOZone::Before t_id=%d deletion_timeitZ=%ld new_type=%d active=%ld max_open_zone=%d\n", gettid(),new_lifetime, new_type, active_io_zones_.load(), max_nr_active_io_zones_);
   
   Zone *allocated_zone = nullptr;
   unsigned int best_diff = LIFETIME_DIFF_NOT_GOOD;
