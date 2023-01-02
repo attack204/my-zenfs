@@ -33,18 +33,15 @@
 namespace ROCKSDB_NAMESPACE {
 const int INF = 1e9;
 
-//true: use my algorithm
-//false: use default algorithm
 const bool MYMODE = true; 
+const int ZoneNumber = 100;
 
-//1 0 0: all GC 0 1 1 all compensation
 const int ENABLE_PRECOMPACTION = 1; 
 const double GC_THRESHOLD = 1;
+const int MAX_LIFETIME = 1e9;
 const int ENABLE_LIMIT_LEVEL = 3;
 
-
 const int T = 50;
-const int MAX_LIFETIME = 1000;
 const uint64_t GC_START_LEVEL = 60;
 const uint64_t GC_STOP_LEVEL = 75;
 
@@ -53,14 +50,12 @@ const uint64_t GC_STOP_LEVEL = 75;
 // const uint64_t GC_STOP_LEVEL = 30;
 
 const int SHORT_THE = 2;
+const int ENABLE_SHORT_WITH_TYPE0 = 50;
+const int ENABLE_T_SLICE = 1;
+
+
 const int MAX_DIFFTIME = INF; //ALGO 2 3
 const int MULTI = 1;
-const int ENABLE_T_SLICE = 1;
-const int ENABLE_SHORT_WITH_TYPE0 = 50;
-
-
-
-const int ZoneNumber = 100;
 const int ENABLE_CAZA = 0;
 const int MB = 1024 * 1024;
 const int ENABLE_T_RANGE = 0; //1 means [-T, T]
