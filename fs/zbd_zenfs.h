@@ -38,7 +38,6 @@ const int ZoneNumber = 100;
 
 const int ENABLE_PRECOMPACTION = 1; 
 const double GC_THRESHOLD = 1;
-const int MAX_LIFETIME = 1e9;
 const int ENABLE_LIMIT_LEVEL = 3;
 
 const int T = 50;
@@ -53,7 +52,7 @@ const int SHORT_THE = 2;
 const int ENABLE_SHORT_WITH_TYPE0 = 50;
 const int ENABLE_T_SLICE = 1;
 
-
+const int MAX_LIFETIME = 1e9;
 const int MAX_DIFFTIME = INF; //ALGO 2 3
 const int MULTI = 1;
 const int ENABLE_CAZA = 0;
