@@ -33,37 +33,43 @@
 namespace ROCKSDB_NAMESPACE {
 const int INF = 1e9;
 
-const bool MYMODE = true; 
-const int ZoneNumber = 100;
+const bool MYMODE = true; //true: Prophet false: LIZA
+const int ZoneNumber = 100; 
 
+//full compensation: 1 0 0
+//full gc: 0 1 0
+//gc with compensation: 1 1 3
 const int ENABLE_PRECOMPACTION = 1; 
 const double GC_THRESHOLD = 1;
 const int ENABLE_LIMIT_LEVEL = 3;
 
 const int T = 100;
-//const uint64_t GC_START_LEVEL = 60;
+//const uint64_t GC_START_LEVEL = 60; //micro test
 //const uint64_t GC_STOP_LEVEL = 75;
 
-const uint64_t GC_START_LEVEL = 20;
+const uint64_t GC_START_LEVEL = 20; //full test
 const uint64_t GC_STOP_LEVEL = 45;
 
-const int SHORT_THE = 2;
-const int ENABLE_SHORT_WITH_TYPE0 = 50;
-const int ENABLE_T_SLICE = 1;
+const int SHORT_THE = 2; //SHORT_THRESHOLD of level segragation
+const int ENABLE_T_SLICE = 1; //ENABLE rounding
+const int ENABLE_SHORT_WITH_TYPE0 = 50; //case2B threshold
 
-const int MAX_LIFETIME = 1e9;
-const int MAX_DIFFTIME = INF; //ALGO 2 3
-const int MULTI = 1;
-const int ENABLE_CAZA = 0;
+const int MAX_LIFETIME = 1e9; //deprecate
+const int MAX_DIFFTIME = INF; //deprecate
+const int MULTI = 1;//deprecate
+const int ENABLE_CAZA = 0;//deprecate
+const int MODIFY_OFF = 0; //deprecate
+const int ENABLE_CASE1 = 0; //deprecate
+const int ENABLE_CASE2 = 0; //deprecate
+const bool DISABLE_RESET = false; //deprecate
+const int ENABLE_T_RANGE = 0; //1 means [-T, T] deprecate
+
+
+const int CALC_RESET = 1; //default
+const int K = 1; //gc top k default
 const int MB = 1024 * 1024;
-const int ENABLE_T_RANGE = 0; //1 means [-T, T]
-const int CALC_RESET = 1;
-const int K = 1; //gc top k
-const int MODIFY_OFF = 0;
-const bool DISABLE_RESET = false;
 extern int reset_zone_num;
-const int ENABLE_CASE1 = 0;
-const int ENABLE_CASE2 = 0;
+
 
 
 class ZonedBlockDevice;
