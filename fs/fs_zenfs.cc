@@ -359,6 +359,7 @@ void ZenFS::MyGCWorker() {
     std::vector<int> type_list;
     uint64_t migrate_file_num = 0;
     uint64_t migrate_size = 0;
+    uint64_t pre_fail_id = -1;
     std::vector<std::vector<uint64_t> > lifetime_list_v;
     std::vector<std::vector<uint64_t> > prediction_lifetime_list_v;
     std::vector<std::map<int, int> > hint_num_v;
@@ -417,7 +418,7 @@ void ZenFS::MyGCWorker() {
         printf("PreCompaction FileList: ");
         for(auto &x: file_list) printf("%ld ", x);
         puts("");
-        if(ENABLE_PRECOMPACTION && zone.used_capacity != 0 && file_list.size() != 0 && control_flag == 1) {
+        if(ENABLE_PRECOMPACTION && zone.id != pre_fail_id && zone.used_capacity != 0 && file_list.size() != 0 && control_flag == 1) {
           if( DoPreCompaction(file_list, ENABLE_LIMIT_LEVEL, MAX_LIFETIME)) {
             pre_compaction_num++;
             printf("DoPreCompaction %d zone_id=%ld file_list.size()=%ld\n", pre_compaction_num, zone.id, file_list.size());
@@ -432,9 +433,11 @@ void ZenFS::MyGCWorker() {
             if(!s.ok()) {
               printf("ERROR: ResetZoneIn PreCompaction");
             }  
+            pre_fail_id = -1;
           } else {
             printf("DoPreCompaction is False\n");
             migrate_zones_start.emplace(zone.start);
+            pre_fail_id = zone.id;
           } 
         }
         zone_file_list[zone.start].clear();
