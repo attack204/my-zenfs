@@ -429,7 +429,7 @@ void ZenFS::MyGCWorker() {
             puts("");
             migrate_zones_start.emplace(zone.start);
             PreCompaction = 1;
-            Status s = zbd_->ResetTartetUnusedIOZones(zone.gid);
+            Status s = zbd_->ResetTartetUnusedIOZones(zone.id);
             if(!s.ok()) {
               printf("ERROR: ResetZoneIn PreCompaction");
             }  
