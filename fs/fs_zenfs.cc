@@ -438,6 +438,7 @@ void ZenFS::MyGCWorker() {
             migrate_zones_start.emplace(zone.start);
           }
           pre_fail_id = zone.id; 
+          printf("Update PreCompaction zone id=%ld\n", pre_fail_id);
         }
         zone_file_list[zone.start].clear();
         zone_file_list_all[zone.start].clear();
