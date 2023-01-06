@@ -309,6 +309,7 @@ bool check_gced(std::vector<uint64_t> &file_list, std::map<int64_t, int> &has_mi
   }
   return 0;
 }
+uint64_t pre_fail_id = -1;
 void ZenFS::MyGCWorker() {
   uint32_t gc_times = 0;
   uint32_t running = 0;
@@ -359,7 +360,6 @@ void ZenFS::MyGCWorker() {
     std::vector<int> type_list;
     uint64_t migrate_file_num = 0;
     uint64_t migrate_size = 0;
-    uint64_t pre_fail_id = -1;
     std::vector<std::vector<uint64_t> > lifetime_list_v;
     std::vector<std::vector<uint64_t> > prediction_lifetime_list_v;
     std::vector<std::map<int, int> > hint_num_v;
