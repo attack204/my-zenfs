@@ -433,12 +433,12 @@ void ZenFS::MyGCWorker() {
             if(!s.ok()) {
               printf("ERROR: ResetZoneIn PreCompaction");
             }  
-            pre_fail_id = -1;
           } else {
             printf("DoPreCompaction is False\n");
             migrate_zones_start.emplace(zone.start);
-            pre_fail_id = zone.id;
-          } 
+           
+          }
+          pre_fail_id = zone.id; 
         }
         zone_file_list[zone.start].clear();
         zone_file_list_all[zone.start].clear();
