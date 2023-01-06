@@ -415,7 +415,7 @@ void ZenFS::MyGCWorker() {
           printf("Case 4 Compensation %d %lf\n", ++case4, 1.0 * zone.used_capacity / zone.max_capacity);
           control_flag = 1;
         }
-        printf("PreCompaction FileList: ");
+        printf("PreCompaction FileList zone_id=%ld pre_zone_id=%ld: ", zone.id, pre_fail_id);
         for(auto &x: file_list) printf("%ld ", x);
         puts("");
         if(ENABLE_PRECOMPACTION && zone.id != pre_fail_id && zone.used_capacity != 0 && file_list.size() != 0 && control_flag == 1) {
@@ -429,14 +429,13 @@ void ZenFS::MyGCWorker() {
             puts("");
             migrate_zones_start.emplace(zone.start);
             PreCompaction = 1;
-            Status s = zbd_->ResetTartetUnusedIOZones(zone.id);
+            Status s = zbd_->ResetTartetUnusedIOZones(zone.gid);
             if(!s.ok()) {
               printf("ERROR: ResetZoneIn PreCompaction");
             }  
           } else {
             printf("DoPreCompaction is False\n");
             migrate_zones_start.emplace(zone.start);
-           
           }
           pre_fail_id = zone.id; 
         }
